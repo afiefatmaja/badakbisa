@@ -78,6 +78,7 @@ main{max-width:1560px;margin:0 auto;padding:16px}
 .btn.sm{padding:6px 11px;font-size:11px;font-weight:600}
 .btn.dg:hover{border-color:var(--bd);color:var(--bd)}
 .btn.ok{border-color:var(--ok);color:var(--ok2)}
+.btn.unsaved{border-color:var(--wn);color:var(--wn);font-weight:700}
 .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
 .nav{display:flex;gap:10px;justify-content:space-between;margin:4px 0 26px}
 .pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(126px,1fr));gap:9px}
@@ -319,12 +320,16 @@ var LOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAVQAAAFKCAIAAADNLDAJAAB9
    other way (ROTA.08 sec. 2.2.3).
 
    Taking the STATIONARY shaft centreline as datum, x = 0 at the stationary
-   indicator plane, x = D1 at the movable indicator plane, +y up and +x to
-   the right as seen from the chosen viewpoint, the movable centreline is
+   indicator plane, x = D1 at the movable indicator plane, +yv UP and +yh to
+   the observer's LEFT (observer behind the driver), the movable centreline is
+   (v1.7: the horizontal axis was +RIGHT up to v1.6. It is now +LEFT, which is
+   the ROTA.08 sec. 2.2.3 plotting rule - stationary offset plotted with its
+   own sign, movable offset with the sign reversed - and the frame the Excel
+   sheet charts. Both axes now have the same form and the same move rule.)
 
    REVERSE INDICATOR
        yv(x) =  osV + ( -omV - osV )/D1 * x
-       yh(x) = -osH + (  omH + osH )/D1 * x
+       yh(x) =  osH + ( -omH - osH )/D1 * x
      osV,osH = plane offsets of the reading set taken ON the stationary hub
      omV,omH = plane offsets of the reading set taken ON the movable hub
 
@@ -340,11 +345,11 @@ var LOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAVQAAAFKCAIAAADNLDAJAAB9
        argument gives, which is why it is pinned to the module's own worked
        example in test REF-3 rather than to a derivation.
        yv(x) =  osV + (-2*ofV/H) * x
-       yh(x) = -osH + ( 2*ofH/H) * x
+       yh(x) =  osH + (-2*ofH/H) * x
 
    Deviation  d(x) = y_actual(x) - y_desired(x).
    Correction MOVE UP    at a foot = -dv(foot)
-   Correction MOVE LEFT  at a foot = +dh(foot)
+   Correction MOVE LEFT  at a foot = -dh(foot)
 
    For the reverse case this reduces to the legacy workbook formula
        F = V2 * D / D1 - V1 ,  with V1 = as-ds at the stationary plane and
@@ -365,8 +370,10 @@ var SA=(function(){
  /* movable centreline for one reading set, datum = stationary shaft */
  function centreline(pass,method,D1){
   var os=planeOffset(pass.stat), om=planeOffset(pass.mov), S=D1||1;
-  if(method==='fr') return { v:{a:os.v, b:(-2*om.v)/S}, h:{a:-os.h, b:( 2*om.h)/S} };
-  return { v:{a:os.v, b:(-om.v-os.v)/S}, h:{a:-os.h, b:( om.h+os.h)/S} };
+  /* v1.7: h is LEFT positive, the ROTA.08 graph frame, so h has exactly the
+     form of v and a positive value plots UP on every horizontal figure */
+  if(method==='fr') return { v:{a:os.v, b:(-2*om.v)/S}, h:{a:os.h, b:(-2*om.h)/S} };
+  return { v:{a:os.v, b:(-om.v-os.v)/S}, h:{a:os.h, b:(-om.h-os.h)/S} };
  }
  function at(l,x){ return l.a+l.b*x; }
  function deviation(act,des,method,D1){
@@ -714,7 +721,7 @@ function solveIdx(idx){
   offV2:SA.at(dev.v,span), offH2:SA.at(dev.h,span),
   angV:dev.v.b, angH:dev.h.b,
   move:{ ibV:-SA.at(dev.v,D2), obV:-SA.at(dev.v,D3),
-         ibH: SA.at(dev.h,D2), obH: SA.at(dev.h,D3) },   /* +V = up, +H = push left */
+         ibH:-SA.at(dev.h,D2), obH:-SA.at(dev.h,D3) },   /* +V = up, +H = push left; both = -deviation */
   lim:lim, span:span
  };
  var par=[];
@@ -1119,7 +1126,7 @@ function simEq(idx,axis,light){
  var s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
  s+='<rect width="'+W+'" height="'+H+'" fill="'+C.bg+'"/>';
  s+=tx(14,20,(LANG==='id'?'SIMULASI ':'SIMULATION ')+(axis==='v'?(LANG==='id'?'VERTIKAL · tampak samping':'VERTICAL · side view')
-   :(LANG==='id'?'HORIZONTAL · tampak atas':'HORIZONTAL · top view'))+' — '+esc(passName(idx)),{s:11.5,f:C.tx,w:700});
+   :(LANG==='id'?'HORIZONTAL · atas = KIRI (ROTA.08)':'HORIZONTAL · up = LEFT (ROTA.08)'))+' — '+esc(passName(idx)),{s:11.5,f:C.tx,w:700});
  s+=tx(14,35,scaleNote(sc),{s:9,f:C.or});
  if(axis==='v') s+='<rect x="24" y="'+base+'" width="'+(W-48)+'" height="12" fill="'+C.mt2+'" stroke="'+C.ln+'"/>';
  if(axis==='h'){
@@ -1278,7 +1285,7 @@ function graphFig(axis,light){
  s+='<rect width="'+W+'" height="'+H+'" fill="'+(light?'#fff':C.bg)+'"/>';
  var axc=light?'#111':C.tx, mu=light?'#555':C.mu;
  s+=tx(14,22,(axis==='v'?(LANG==='id'?'GRAFIK ALIGNMENT — VERTIKAL (tampak samping)':'ALIGNMENT GRAPH — VERTICAL (side view)')
-   :(LANG==='id'?'GRAFIK ALIGNMENT — HORIZONTAL (tampak atas)':'ALIGNMENT GRAPH — HORIZONTAL (top view)')),{s:12,f:axc,w:700});
+   :(LANG==='id'?'GRAFIK ALIGNMENT — HORIZONTAL (atas = KIRI, ROTA.08)':'ALIGNMENT GRAPH — HORIZONTAL (up = LEFT, ROTA.08)')),{s:12,f:axc,w:700});
  s+=tx(14,38,(LANG==='id'?'Skala mendatar: 1 kotak = ':'Horizontal scale: 1 square = ')+g.xper+
    (LANG==='id'?' inch panjang mesin':' inch of machine length'),{s:9.5,f:mu});
  s+=tx(14,51,(LANG==='id'?'Skala tegak: 1 kotak = ':'Vertical scale: 1 square = ')+g.yper+
@@ -1298,7 +1305,7 @@ function graphFig(axis,light){
  s+=tx(gx+gw/2,H-16,(LANG==='id'?'jarak aksial dari bidang indikator stationary, inch':'axial distance from the stationary indicator plane, inch'),{a:'middle',s:9.5,f:axc});
  s+='<text x="20" y="'+(gy+gh/2)+'" fill="'+axc+'" font-size="9.5" font-family="ui-monospace,monospace" text-anchor="middle" transform="rotate(-90 20 '+(gy+gh/2)+')">'+
     (axis==='v'?(LANG==='id'?'offset vertikal, mils (+ = ATAS)':'vertical offset, mils (+ = UP)')
-               :(LANG==='id'?'offset horizontal, mils (+ = KANAN)':'horizontal offset, mils (+ = RIGHT)'))+'</text>';
+               :(LANG==='id'?'offset horizontal, mils (+ = KIRI)':'horizontal offset, mils (+ = LEFT)'))+'</text>';
  /* coupling band and station lines, labels on a dedicated row above the grid */
  var cw=light?'#0a6b21':C.fx, mvc=light?'#1f6feb':C.mv;
  s+='<rect x="'+X(0)+'" y="'+gy+'" width="'+(X(D1i)-X(0))+'" height="'+gh+'" fill="'+cw+'" opacity=".09"/>';
@@ -1320,11 +1327,14 @@ function graphFig(axis,light){
  if(RES){
   var mv=axis==='v'?[RES.move.ibV,RES.move.obV]:[RES.move.ibH,RES.move.obH];
   var lx2=gx+gw+18, ly2=gy+18+(sets.length+1)*18+18;
-  var w1=axis==='v'?(mv[0]>0?'UP':'DOWN'):(mv[0]>0?'LEFT':'RIGHT');
-  var w2=axis==='v'?(mv[1]>0?'UP':'DOWN'):(mv[1]>0?'LEFT':'RIGHT');
+  /* v1.7: a zero move read RIGHT 0.0 / DOWN 0.0; it now reads ON TARGET */
+  var eps=SA.MIL_MM*0.05;
+  var wd=function(v){ if(Math.abs(v)<eps) return null;
+   return axis==='v'?(v>0?'UP':'DOWN'):(v>0?'LEFT':'RIGHT'); };
+  var ln=function(tag,v){ var w=wd(v); return tag+' '+(w?w+' '+fMil(Math.abs(v))+' mil':(LANG==='id'?'SUDAH PAS':'ON TARGET')); };
   s+=tx(lx2,ly2,(LANG==='id'?'KOREKSI':'CORRECTION'),{s:9,f:axc,w:700});
-  s+=tx(lx2,ly2+16,'I/B '+w1+' '+fMil(Math.abs(mv[0]))+' mil',{s:9.5,f:axc});
-  s+=tx(lx2,ly2+30,'O/B '+w2+' '+fMil(Math.abs(mv[1]))+' mil',{s:9.5,f:axc});
+  s+=tx(lx2,ly2+16,ln('I/B',mv[0]),{s:9.5,f:axc});
+  s+=tx(lx2,ly2+30,ln('O/B',mv[1]),{s:9.5,f:axc});
  }
  palUI(); return s+'</svg>';
 }
@@ -1880,6 +1890,7 @@ function pane7(){
     '<input type="file" id="phLib" accept="image/*" multiple style="display:none">'+
     '<button class="btn p" id="btnCam">'+(LANG==='id'?'Ambil foto':'Take photo')+'</button>'+
     '<button class="btn" id="btnLib">'+(LANG==='id'?'Dari galeri':'From gallery')+'</button></div>'+
+   '<div id="phWarn" class="noprint"></div>'+
    '<div id="phGrid" style="margin-top:12px"></div></div></div>'+
   '<div class="card"><h3>'+T('analysis')+' / '+T('recomm')+'</h3><div class="cb"><div class="grid g2">'+
    ta(T('analysis'),'ev.analysis')+ta(T('recomm'),'ev.recommendation')+'</div></div></div>';
@@ -1896,7 +1907,7 @@ function pane7(){
   $('btnLib').onclick=function(){ $('phLib').click(); };
   function take(inp){ inp.onchange=function(){
    var self=this, fs=Array.prototype.slice.call(this.files||[]); if(!fs.length) return;
-   Promise.all(fs.map(addPhoto)).then(function(){ self.value=''; phRender(); })
+   Promise.all(fs.map(addPhoto)).then(function(){ self.value=''; phRender(); photoChanged(); })
     .catch(function(){ toast(LANG==='id'?'Foto gagal dimuat':'Photo failed',1); }); }; }
   take($('phCam')); take($('phLib'));
   resRender(); simRender(); phRender();
@@ -1926,6 +1937,7 @@ function resRender(){
 }
 function phRender(){
  var g=$('phGrid'); if(!g) return;
+ saveBadge();
  $('phCount').textContent=S.photos.length?S.photos.length+' '+(LANG==='id'?'foto':'photos'):'';
  if(!S.photos.length){ g.innerHTML='<div style="font-size:11.5px;color:var(--mu)">'+(LANG==='id'?'Belum ada foto.':'No photos yet.')+'</div>'; return; }
  g.innerHTML='<div class="phgrid">'+S.photos.map(function(p,i){
@@ -1933,7 +1945,7 @@ function phRender(){
    '<input data-ph="'+i+'" value="'+esc(p.cap||'')+'" placeholder="'+(LANG==='id'?'Keterangan':'Caption')+'">'+
    '<button class="btn sm dg" data-phdel="'+i+'">&times;</button></div>'; }).join('')+'</div>';
  g.querySelectorAll('[data-ph]').forEach(function(e){ e.oninput=function(){ S.photos[+this.getAttribute('data-ph')].cap=this.value; }; });
- g.querySelectorAll('[data-phdel]').forEach(function(e){ e.onclick=function(){ S.photos.splice(+this.getAttribute('data-phdel'),1); phRender(); }; });
+ g.querySelectorAll('[data-phdel]').forEach(function(e){ e.onclick=function(){ S.photos.splice(+this.getAttribute('data-phdel'),1); phRender(); photoChanged(); }; });
 }
 function addPhoto(file){
  return new Promise(function(res,rej){
@@ -2105,7 +2117,7 @@ function buildReport(){
  h+=sec('11. Alignment line graph',
   '<div style="text-align:center">'+graphFig('v',true)+'</div>'+
   '<div style="text-align:center;margin-top:1.5mm">'+graphFig('h',true)+'</div>'+
-  '<div style="font-size:7.2pt;margin-top:1mm">Manual graphing convention. Horizontal and vertical grid scales are printed on each frame. Heavy dash-dot line is the stationary shaft centreline taken as datum, the shaded band is the coupling. Purple dashed = desired, orange = as found, green = final.</div>');
+  '<div style="font-size:7.2pt;margin-top:1mm">Manual graphing convention, ROTA.08 sec. 2.2.3: vertical plus = UP, horizontal plus = LEFT (seen from behind the driver). Horizontal and vertical grid scales are printed on each frame. Heavy dash-dot line is the stationary shaft centreline taken as datum, the shaded band is the coupling. Purple dashed = desired, orange = as found, green = final.</div>');
  pal(false); palUI();
  h+=foot(pg)+'</div>';
 
@@ -2192,6 +2204,64 @@ function dbDel(id){ return dbOpen().then(function(db){ return new Promise(functi
         unchanged and still hold the deliberately saved jobs.                  */
 var AUTO_KEY='current', AUTO_MAX_AGE=45*864e5;
 var autoTimer=null, autoOn=false;
+/* ===== v1.7 PHOTOS TRAVEL WITH THE JSON FILE ============================
+   Photos were always written into the JSON (packJob copies S.photos), but
+   nothing told the user when the file on disk was older than the screen.
+   The autosave mirror restores photos on the same tablet after a reload,
+   so a job saved BEFORE the photos were taken looked complete there and
+   arrived on another device with photos:[]. Three guards:
+     1. DIRTY: any edit, photo added, deleted or captioned marks the job as
+        not yet in the file; the Simpan button turns amber and the photo
+        card says so until Simpan + file is pressed.
+     2. Save and Open toasts state how many photos the file carries.
+     3. Opening a file (or an archive entry) that lacks photos which this
+        tablet still holds for the SAME job id (autosave mirror or archive)
+        puts them back, says so, and leaves the job DIRTY so the next save
+        writes them into the file.                                         */
+var DIRTY=false;
+function saveBadge(){
+ var b=$('btnSave');
+ if(b){ b.classList.toggle('unsaved',DIRTY); b.textContent=DIRTY?'Simpan \u2022':'Simpan';
+  b.title=DIRTY?(LANG==='id'?'Ada perubahan yang belum masuk file JSON':'Changes not yet written to the JSON file'):''; }
+ var w=$('phWarn');
+ if(w) w.innerHTML=(DIRTY&&S.photos&&S.photos.length)?'<div class="box w" style="margin-top:10px;font-size:12px">'+(LANG==='id'
+   ?'<b>'+S.photos.length+' foto belum masuk file JSON.</b> Tekan <b>Simpan</b> (atau Simpan + file di bagian 8). File JSON itulah yang dibawa pindah; riwayat dan pemulihan otomatis di tablet ini tidak ikut terbawa.'
+   :'<b>'+S.photos.length+' photos are not in the JSON file yet.</b> Press <b>Save</b>. The JSON file is what travels; this tablet\'s history and auto-restore do not.')+'</div>':'';
+}
+function photoChanged(){ DIRTY=true; saveBadge(); if(autoOn){ clearTimeout(autoTimer); autosaveFlush(); } }
+function photoKey(p){ var d=(p&&p.d)||''; return d.length+'|'+d.slice(-64); }
+/* adds to rec.S.photos every local photo it does not already carry; returns
+   the number added. Pure, so it is covered by the test suite. */
+function mergePhotos(rec,local){
+ if(!rec||!rec.S) return 0;
+ if(!rec.S.photos) rec.S.photos=[];
+ var have={}, n=0;
+ rec.S.photos.forEach(function(p){ have[photoKey(p)]=1; });
+ (local||[]).forEach(function(p){ if(!p||!p.d) return; var k=photoKey(p); if(have[k]) return;
+  have[k]=1; rec.S.photos.push({d:p.d,cap:p.cap||'',t:p.t||''}); n++; });
+ return n;
+}
+/* photos this tablet still holds for the job id carried by rec */
+function localPhotosFor(rec){
+ var id=rec&&rec.id; if(!id) return Promise.resolve([]);
+ var a=dbAutoGet().catch(function(){return null;}), b=dbGet(id).catch(function(){return null;});
+ return Promise.all([a,b]).then(function(x){
+  var out=[];
+  if(x[0]&&x[0].S&&(x[0].jobId===id)&&x[0].S.photos) out=out.concat(x[0].S.photos);
+  if(x[1]&&x[1].S&&x[1].S.photos) out=out.concat(x[1].S.photos);
+  return out; });
+}
+/* single path for File > Open and Riwayat > Buka */
+function openRec(rec){
+ return localPhotosFor(rec).then(function(lp){
+  var m=migrate(rec); if(!m||!m.S) throw new Error('bad file');
+  var rescued=mergePhotos(m,lp);
+  if(!applyJob(m)) throw new Error('bad file');
+  DIRTY=rescued>0; saveBadge();
+  dbPut(m).catch(function(){});
+  return {rec:m, rescued:rescued, photos:S.photos.length};
+ });
+}
 function dbAutoPut(rec){ return dbOpen().then(function(db){ return new Promise(function(res,rej){
  var t=db.transaction('auto','readwrite'); t.objectStore('auto').put(rec);
  t.oncomplete=function(){res(rec);}; t.onerror=function(){rej(t.error);}; });}); }
@@ -2223,10 +2293,10 @@ function autosaveFlush(){
  if(!autoOn) return;
  clearTimeout(autoTimer); autoTimer=null;
  var rec; try{ rec=packJob(); }catch(e){ return; }
- rec.id=AUTO_KEY; rec.auto=1; rec.jobId=S.jobId||null; rec.step=STEP; rec.active=ACTIVE;
+ rec.id=AUTO_KEY; rec.auto=1; rec.jobId=S.jobId||null; rec.step=STEP; rec.active=ACTIVE; rec.dirty=DIRTY;
  dbAutoPut(rec).catch(function(){});
 }
-function autosaveMark(){ if(!autoOn) return; clearTimeout(autoTimer); autoTimer=setTimeout(autosaveFlush,350); }
+function autosaveMark(){ if(!autoOn) return; if(!DIRTY){ DIRTY=true; saveBadge(); } clearTimeout(autoTimer); autoTimer=setTimeout(autosaveFlush,350); }
 function rbarHide(){ var b=$('rbar'); if(b){ b.style.display='none'; b.innerHTML=''; } }
 function rbarShow(rec){
  var b=$('rbar'); if(!b) return;
@@ -2246,6 +2316,7 @@ function autosaveRestore(){
   if(!stateHasContent(rec.S)) return false;
   if(!applyJob(rec)) return false;
   S.jobId=rec.jobId||null;
+  DIRTY=(rec.dirty===undefined)?true:!!rec.dirty; saveBadge();
   if(rec.lang) LANG=rec.lang;
   if(typeof rec.step==='number') STEP=Math.max(0,Math.min(7,rec.step));
   if(typeof rec.active==='number') ACTIVE=Math.max(0,Math.min(rec.active,S.passes.length-1));
@@ -2348,14 +2419,18 @@ function exportFile(){
 function doSave(withFile){
  var rec=packJob(); S.jobId=rec.id;
  dbPut(rec).then(function(){
-  if(withFile){ exportFile(); toast((LANG==='id'?'Tersimpan di arsip + file ':'Saved to archive + file ')+jobFileName()); }
+  if(withFile){ var out=exportFile(), n=(out.S.photos||[]).length;
+   DIRTY=false; saveBadge();
+   toast((LANG==='id'?'Tersimpan di arsip + file ':'Saved to archive + file ')+jobFileName()+
+    ' \u00b7 '+n+(LANG==='id'?' foto di dalam file':' photos inside the file'),0,4200); }
   else toast((LANG==='id'?'Tersimpan: ':'Saved: ')+jobFileName());
  }).catch(function(e){ toast(String(e),1); });
 }
 function importFile(f){
  return new Promise(function(res,rej){
   var r=new FileReader();
-  r.onload=function(){ try{ var rec=JSON.parse(r.result); applyJob(rec); dbPut(rec); res(rec); }catch(e){ rej(e); } };
+  r.onload=function(){ var rec; try{ rec=JSON.parse(r.result); }catch(e){ return rej(e); }
+   openRec(rec).then(res,rej); };
   r.onerror=function(){rej(r.error);}; r.readAsText(f); });
 }
 function openArchive(){
@@ -2390,7 +2465,9 @@ function openArchive(){
    h+='</div>'; });
   b.innerHTML=h;
   b.querySelectorAll('[data-load]').forEach(function(e){ e.onclick=function(){
-   dbGet(this.getAttribute('data-load')).then(function(r){ if(applyJob(r)) $('arcModal').style.display='none'; }); }; });
+   dbGet(this.getAttribute('data-load')).then(function(r){ if(!r) return;
+    openRec(r).then(function(o){ $('arcModal').style.display='none';
+     toast(openMsg(r.file||'',o),0,o.rescued?7000:3500); }); }); }; });
   b.querySelectorAll('[data-seed]').forEach(function(e){ e.onclick=function(){
    dbGet(this.getAttribute('data-seed')).then(function(r){
     if(!r||!applyJob(r)) return;
@@ -2400,7 +2477,7 @@ function openArchive(){
     S.sf={r:[0,0,0,0],limit:2*MM,note:'',checked:false};
     S.crit=S.crit.map(function(c){ return {d:c.d,dmin:c.dmin,dmax:c.dmax,act:'',rem:''}; });
     S.passes=[S.passes[0],newPass('initial')]; S.finalConfirmed=false;
-    S.photos=[]; S.ev={analysis:'',recommendation:''}; S.jobId=null; ACTIVE=1; STEP=0;
+    S.photos=[]; S.ev={analysis:'',recommendation:''}; S.jobId=null; ACTIVE=1; STEP=0; DIRTY=false; saveBadge();
     renderSteps(); draw(); $('arcModal').style.display='none';
     toast(LANG==='id'?'Mesin, dimensi, toleransi dan DESIRED dipakai ulang':'Machine, dimensions, tolerance and DESIRED reused');
    }); }; });
@@ -2414,9 +2491,16 @@ function openArchive(){
    if(confirm(LANG==='id'?'Hapus rekaman ini?':'Delete this record?')) dbDel(id).then(openArchive); }; });
  }).catch(function(e){ b.innerHTML='<div style="padding:20px;color:var(--bd);font-size:12.5px">'+esc(String(e))+'</div>'; });
 }
-function toast(msg,bad){
+function openMsg(name,o){
+ var s=(LANG==='id'?'Dimuat: ':'Loaded: ')+name+' \u00b7 '+o.photos+(LANG==='id'?' foto':' photos');
+ if(o.rescued) s+=LANG==='id'
+  ?' \u00b7 '+o.rescued+' foto tidak ada di file dan dipulihkan dari tablet ini. Tekan Simpan agar ikut di file.'
+  :' \u00b7 '+o.rescued+' photos were missing from the file and were recovered from this tablet. Press Save to write them in.';
+ return s;
+}
+function toast(msg,bad,ms){
  var t=$('toast'); t.textContent=msg; t.className='toast'+(bad?' bad':'')+' on';
- clearTimeout(t._h); t._h=setTimeout(function(){ t.className='toast'; },2600);
+ clearTimeout(t._h); t._h=setTimeout(function(){ t.className='toast'; },ms||2600);
 }
 function newJob(){
  if(!confirm(LANG==='id'?'Mulai file baru? Data yang belum disimpan akan hilang.':'Start a new file? Unsaved data will be lost.')) return;
@@ -2425,7 +2509,7 @@ function newJob(){
  S.mach=m; S.dim=d; S.cpl=c; S.sign=sg;
  S.sf={r:[0,0,0,0],limit:2*MM,note:'',checked:false};
  S.crit=defaultCrit(); S.passes=[]; ensurePasses(); S.finalConfirmed=false; S.photos=[]; S.ev={analysis:'',recommendation:''};
- S.jobId=null; ACTIVE=1; STEP=0; rbarHide(); dbAutoClear();
+ S.jobId=null; ACTIVE=1; STEP=0; rbarHide(); dbAutoClear(); DIRTY=false; saveBadge();
  renderSteps(); draw();
  toast(LANG==='id'?'File baru':'New file');
 }
@@ -2468,7 +2552,8 @@ function init(){
  $('btnNew').onclick=newJob;
  $('btnOpen').onclick=function(){ $('fileIn').click(); };
  $('fileIn').onchange=function(){ var f=this.files&&this.files[0]; if(!f) return;
-  importFile(f).then(function(){ toast((LANG==='id'?'Dimuat: ':'Loaded: ')+f.name); })
+  clearTimeout(autoTimer);   /* the file input change is not an edit; keep the mirror until the file is read */
+  importFile(f).then(function(o){ toast(openMsg(f.name,o),0,o.rescued?7000:3500); })
    .catch(function(){ toast(LANG==='id'?'File tidak terbaca':'File not readable',1); });
   this.value=''; };
  document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ $('testModal').style.display='none'; $('arcModal').style.display='none'; } });
@@ -2577,7 +2662,7 @@ function cplIcon(k){
 function bodyFor(axis,k,F,L,H,col,fill){ return axis==='v'? eqBody(k,F,L,H,col) : eqPlan(k,F,L,H,col); }
 
 /* ===== VERSION ========================================================== */
-var APP_VER='1.6', APP_BY='AWA', APP_NAME='BISA — Badak LNG Integrated Shaft Alignment';
+var APP_VER='1.7', APP_BY='AWA', APP_NAME='BISA — Badak LNG Integrated Shaft Alignment';
 /* Schema version of the saved file. The reader below accepts every version
    ever written, so an old job file always opens in a newer build.        */
 var FILE_SCHEMA=7;
@@ -2628,24 +2713,22 @@ function sheetXml(rows,cols){
  });
  return x+'</sheetData></worksheet>';
 }
-/* ===== ORIENTATION OF THE TOP VIEW ======================================
+/* ===== ORIENTATION OF THE HORIZONTAL FIGURES (v1.7) ====================
    Left and right are always taken from an observer standing behind the
-   DRIVER, facing the coupling. The frames draw the stationary machine on
-   the left and the movable machine on the right, so which edge of the page
-   is the observer's right depends on which of the two is the driver:
-
-     movable = driver   ->  the driver sits at the right of the frame, the
-                            observer faces left, and the observer's right is
-                            the TOP of the page
-     movable = driven   ->  the driver sits at the left of the frame, the
-                            observer faces right, and the observer's right is
-                            the BOTTOM of the page
-
-   Getting this wrong does not change a single number, but it makes the top
-   view disagree with the correction words, which is exactly what happened.  */
-function hSign(){ return S.mach.movable==='driver' ? -1 : 1; }
-function edgeTop(){ return hSign()<0 ? (LANG==='id'?'KANAN':'RIGHT') : (LANG==='id'?'KIRI':'LEFT'); }
-function edgeBot(){ return hSign()<0 ? (LANG==='id'?'KIRI':'LEFT') : (LANG==='id'?'KANAN':'RIGHT'); }
+   DRIVER, facing the coupling. v1.5/v1.6 drew the horizontal frame as a
+   literal plan view, so with the driver movable (drawn on the right) the
+   observer's RIGHT came out at the top of the page. Every number was right,
+   but the picture was the mirror image of the ROTA.08 graph and of the
+   Excel sheet chart, which both plot the stationary hub offset with its own
+   sign and the movable hub offset reversed - i.e. LEFT is UP. Field crews
+   compare the two side by side, so a mirrored picture read as a reversed
+   correction.
+   v1.7 follows ROTA.08 sec. 2.2.3: the horizontal centreline is held LEFT
+   positive in the engine and plotted UP on every horizontal figure, for
+   either choice of movable machine. The top edge is always KIRI.          */
+function hSign(){ return -1; }            /* +h (LEFT) plots upward, same as +v */
+function edgeTop(){ return LANG==='id'?'KIRI':'LEFT'; }
+function edgeBot(){ return LANG==='id'?'KANAN':'RIGHT'; }
 
 /* ===== MACHINE ELEVATIONS ==============================================
    Side elevations drawn to the proportions of the real machines: a TEFC
@@ -3097,9 +3180,9 @@ function buildReportXlsx(){
   paramRow('VERTICAL',P1L,cV1,false);
   paramRow('VERTICAL','Angularity, in/in',isFR()?('-2*'+cV2+'/'+cD1):('(-'+cV2+'-'+cV1+')/'+cD1),true);
   if(!isFR()) paramRow('VERTICAL','Offset at flex plane 2 (movable)','-'+cV2,false);
-  paramRow('HORIZONTAL',P1L,'-'+cH1,false);
-  paramRow('HORIZONTAL','Angularity, in/in',isFR()?('2*'+cH2+'/'+cD1):('('+cH2+'+'+cH1+')/'+cD1),true);
-  if(!isFR()) paramRow('HORIZONTAL','Offset at flex plane 2 (movable)',cH2,false);
+  paramRow('HORIZONTAL',P1L,cH1,false);
+  paramRow('HORIZONTAL','Angularity, in/in',isFR()?('-2*'+cH2+'/'+cD1):('(-'+cH2+'-'+cH1+')/'+cD1),true);
+  if(!isFR()) paramRow('HORIZONTAL','Offset at flex plane 2 (movable)','-'+cH2,false);
   var tr=g.G.length;
   g.set(tr,0,{t:'s',v:'Offset limit (inch)',s:10}); g.band(tr,0,1,10); g.merge(tr,0,tr,1);
   g.set(tr,2,{t:'n',v:+(lim.offAcc/IN2).toFixed(6),s:5}); g.band(tr,2,3,5); g.merge(tr,2,tr,3);
@@ -3143,7 +3226,7 @@ function buildReportXlsx(){
   /* ---- 11 ---- */
   g.sec('11. ALIGNMENT LINE GRAPH');
   pushImg(F.grv,700); pushImg(F.grh,700);
-  g.note('Horizontal and vertical grid scales are printed on each frame. Heavy dash-dot line is the stationary shaft centreline taken as datum, the shaded band is the coupling.');
+  g.note('ROTA.08 sec. 2.2.3 convention: vertical plus = UP, horizontal plus = LEFT seen from behind the driver. Horizontal and vertical grid scales are printed on each frame. Heavy dash-dot line is the stationary shaft centreline taken as datum, the shaded band is the coupling.');
   /* ---- 12 photos ---- */
   if(S.photos.length){
    g.BRK.push(g.G.length);
@@ -3475,7 +3558,7 @@ var TESTS=[
   'of the horizontal answer does NOT, because it is anchored to the dial clock positions, which\n'+
   'ROTA fixes from behind the driver for both sets. A pure parallel offset of 10 mils to the\n'+
   'observer right must therefore read PUSH LEFT 10 mils at both feet whichever machine is moved.\n'+
-  'What does depend on the choice is only hSign(), the drawing orientation, covered by VIEW-1.',
+  'Since v1.7 the drawing does not flip either: horizontal figures are LEFT-up for both choices (VIEW-1).',
  f:function(){ return withState(function(){
   var d=10*SA.MIL_MM;                     /* movable shaft sits 10 mils to the observer right */
   S.method='rev'; S.dim.D1=6*IN; S.dim.D2=12*IN; S.dim.D3=24*IN; S.sag=0;
@@ -3496,8 +3579,8 @@ var TESTS=[
   LANG='id';
   var w2=ckS([['both feet say push left',wa,'DORONG KE KIRI'],
    ['and the answer does not change with the movable machine',wa,wb],
-   ['drawing flips instead',(function(){S.mach.movable='driven';var p=hSign();
-     S.mach.movable='driver';return p!==hSign();})(),true]]);
+   ['drawing orientation is the same for both',(function(){S.mach.movable='driven';var p=hSign();
+     S.mach.movable='driver';return p===hSign();})(),true]]);
   return {pass:num.pass&&w2.pass, detail:num.detail+'\n'+w2.detail};
  });}},
 {n:'DIA-1  Plane offset and the validity rule',
@@ -3625,18 +3708,88 @@ var TESTS=[
               ['after adding a pass the flag is cleared',S.finalConfirmed,false],
               ['the newly added pass is a plain koreksi, not FINAL',lblNew,T('pass')+' 1']]);
  });}},
-{n:'VIEW-1  The top view is oriented from behind the driver',
- d:'Left and right are always taken from an observer behind the DRIVER. The frames put the stationary\n'+
-   'machine on the left, so when the movable machine is the driver the observer faces leftwards across\n'+
-   'the page and the observer right hand side is the TOP edge. Drawing it the other way makes the picture\n'+
-   'contradict the correction words without changing any number.',
+{n:'VIEW-1  Horizontal figures follow ROTA.08: LEFT is up, for either movable machine',
+ d:'ROTA.08 sec. 2.2.3 plots the stationary hub offset with its own sign and the movable hub offset\n'+
+   'reversed, so on the horizontal graph a positive value is to the LEFT of an observer behind the\n'+
+   'driver and is drawn UP. The Excel sheet charts the same way. v1.6 drew a literal plan view that put\n'+
+   'RIGHT at the top whenever the driver was movable, the mirror image of the sheet. The engine now holds\n'+
+   'h LEFT positive, so a shaft 3 mils to the LEFT has h = +3 at plane 1, plots above the datum, and\n'+
+   'must be pushed RIGHT.',
  f:function(){ return withState(function(){
-  S.mach.movable='driver'; var a=hSign(), at=edgeTop();
+  var MIL=SA.MIL_MM, I=function(v){return v*IN;};
+  S.method='rev'; S.dim={D1:I(10),D2:I(20),D3:I(35),H:I(6),gap:I(10)}; S.sag=0;
+  /* 3 mils LEFT = -3 mils in the right-positive synth helper */
+  S.passes=[synthRev(0,0,0,0,S.dim.D1), synthRev(0,0,-3*MIL,0,S.dim.D1)];
+  S.mach.movable='driver'; var a=hSign(), at=edgeTop(), ab=edgeBot(), r=solveIdx(1);
+  var cl=SA.centreline(S.passes[1],'rev',S.dim.D1).h;
   S.mach.movable='driven'; var b=hSign(), bt=edgeTop();
-  LANG='en'; S.mach.movable='driver'; var ce=edgeTop(); LANG='id';
-  return ckS([['movable is the driver, plus plots upward',a,-1],['and the top edge is the right hand side',at,'KANAN'],
-   ['movable is the driven, plus plots downward',b,1],['and the top edge is the left hand side',bt,'KIRI'],
-   ['label follows the language',ce,'RIGHT']]);
+  LANG='en'; var ce=edgeTop(); LANG='id';
+  var sv=simEq(1,'h',true), m=sv.match(/<text[^>]*>KIRI<\/text>/);
+  var n=ck([['h at plane 1, mils (+ = left)',SA.at(cl,0)/MIL,3],
+   ['I/B move, mils (negative = push right)',r.move.ibH/MIL,-3],
+   ['offset at plane 1 shows +3 (left)',r.offH1/MIL,3]]);
+  var t=ckS([['movable = driver, plus plots upward',a,-1],['top edge is KIRI',at,'KIRI'],['bottom edge is KANAN',ab,'KANAN'],
+   ['movable = driven, same orientation',b,-1],['top edge still KIRI',bt,'KIRI'],
+   ['label follows the language',ce,'LEFT'],['simulation prints KIRI',!!m,true],
+   ['correction word',mvWordH(r.move.ibH),'DORONG KE KANAN']]);
+  return {pass:n.pass&&t.pass, detail:n.detail+'\n'+t.detail};
+ });}},
+{n:'XL-1  Excel sheet 31-G-170B (Motor to Pump, 2Y BIP Boiler 26) reproduced',
+ d:'D1 5, D2 11, D3 17 inch. Readings as keyed in the sheet, bar sag 0.\n'+
+   '  desired  Motor>Pump L -.001 R -.001 B -.002   Pump>Motor L .001 R .001 B .002\n'+
+   '  actual   Motor>Pump L -.007 R -.015 B -.025   Pump>Motor L -.010 R .005 B .025\n'+
+   'Sheet: vertical near +.0115 far +.0115 (up), horizontal near +.0117 far +.0159 (PLUS = MOVE LEFT),\n'+
+   'PARALLEL STATIONARY horizontal -.004. The sheet chart plots -4 mils at P1 and -7.5 mils at P2,\n'+
+   'i.e. BELOW the datum, and the BISA graph must now do the same.',
+ f:function(){ return withState(function(){
+  var I=function(v){return v*IN;}, MIL=SA.MIL_MM;
+  S.method='rev'; S.dim={D1:I(5),D2:I(11),D3:I(17),H:I(6),gap:I(5)}; S.sag=0; S.tol.basis='api';
+  S.mach.driver='motor'; S.mach.driven='pump'; S.mach.movable='driver';
+  S.passes=[{name:'desired',stat:{T:0,L:I(-0.001),R:I(-0.001),B:I(-0.002)},mov:{T:0,L:I(0.001),R:I(0.001),B:I(0.002)}},
+            {name:'initial',stat:{T:0,L:I(-0.007),R:I(-0.015),B:I(-0.025)},mov:{T:0,L:I(-0.010),R:I(0.005),B:I(0.025)}}];
+  S.finalConfirmed=false;
+  var r=solveIdx(1), cl=SA.centreline(S.passes[1],'rev',S.dim.D1).h;
+  return ck([['I/B vertical, up',r.move.ibV/IN,0.0115],['O/B vertical, up',r.move.obV/IN,0.0115],
+   ['I/B horizontal, left',r.move.ibH/IN,0.0117],['O/B horizontal, left',r.move.obH/IN,0.0159],
+   ['parallel stationary H = sheet L28',r.offH1/IN,-0.004],
+   ['graph at P1, mils (sheet B65)',SA.at(cl,0)/MIL,-4],
+   ['graph at P2, mils (sheet C65)',SA.at(cl,S.dim.D1)/MIL,-7.5]]);
+ });}},
+{n:'XL-2  Excel sheet G1-G-1A pump-gearbox reproduced, desired not zero',
+ d:'D1 8, D2 23, D3 73 inch. Sets placed the way the sheet feeds its STATIONARY / MOVEABLE rows.\n'+
+   '  desired  Motor>Pump L .0025 R -.0015 B .001   Pump>Motor L -.0025 R .002 B -.0005\n'+
+   '  actual   Motor>Pump L .013  R .005   B .015   Pump>Motor L -.020  R .005 B -.015\n'+
+   'Sheet: vertical near -.00771875 far -.00928125, horizontal near +.02571875 far +.07728125 (left),\n'+
+   'PARALLEL STATIONARY horizontal -.002.',
+ f:function(){ return withState(function(){
+  var I=function(v){return v*IN;};
+  S.method='rev'; S.dim={D1:I(8),D2:I(23),D3:I(73),H:I(6),gap:I(8)}; S.sag=0; S.tol.basis='api';
+  S.mach.movable='driver';
+  S.passes=[{name:'desired',stat:{T:0,L:I(0.0025),R:I(-0.0015),B:I(0.001)},mov:{T:0,L:I(-0.0025),R:I(0.002),B:I(-0.0005)}},
+            {name:'initial',stat:{T:0,L:I(0.013),R:I(0.005),B:I(0.015)},mov:{T:0,L:I(-0.020),R:I(0.005),B:I(-0.015)}}];
+  S.finalConfirmed=false;
+  var r=solveIdx(1);
+  return ck([['I/B vertical',r.move.ibV/IN,-0.00771875],['O/B vertical',r.move.obV/IN,-0.00928125],
+   ['I/B horizontal, left',r.move.ibH/IN,0.02571875],['O/B horizontal, left',r.move.obH/IN,0.07728125],
+   ['parallel stationary H = sheet L28',r.offH1/IN,-0.002]]);
+ });}},
+{n:'PHOTO-1  Photos survive Save, a copy to another device, and Open',
+ d:'The JSON is the only thing that travels, so the photo data URL must come back byte for byte after\n'+
+   'packJob, JSON text, and migrate. mergePhotos() restores photos a tablet still holds for the same job\n'+
+   'without duplicating the ones the file already carries.',
+ f:function(){ return withState(function(){
+  var p1={d:'data:image/jpeg;base64,/9j/AAAA'+('Q'.repeat(300))+'1',cap:'hub motor',t:'2026-09-28T01:00:00Z'};
+  var p2={d:'data:image/jpeg;base64,/9j/BBBB'+('R'.repeat(300))+'2',cap:'',t:'2026-09-28T01:01:00Z'};
+  S.photos=[p1,p2];
+  var text=JSON.stringify(packJob()), back=migrate(JSON.parse(text));
+  var emptyFile=migrate(JSON.parse(text)); emptyFile.S.photos=[];
+  var added=mergePhotos(emptyFile,[p1,p2,p1]);
+  var partial=migrate(JSON.parse(text)); partial.S.photos=[p1];
+  var added2=mergePhotos(partial,[p1,p2]);
+  return ckS([['photos in the file',back.S.photos.length,2],
+   ['first photo identical',back.S.photos[0].d===p1.d,true],['caption kept',back.S.photos[0].cap,'hub motor'],
+   ['empty file gets both back',added,2],['no duplicates',emptyFile.S.photos.length,2],
+   ['partial file gets only the missing one',added2,1],['order kept',partial.S.photos[1].d===p2.d,true]]);
  });}},
 {n:'LOAD-1  Old job files still open',
  d:'A file written by any earlier build must load. Fields that did not exist then are filled from the\n'+
