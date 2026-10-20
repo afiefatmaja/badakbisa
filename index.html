@@ -79,6 +79,20 @@ main{max-width:1560px;margin:0 auto;padding:16px}
 .btn.dg:hover{border-color:var(--bd);color:var(--bd)}
 .btn.ok{border-color:var(--ok);color:var(--ok2)}
 .btn.unsaved{border-color:var(--wn);color:var(--wn);font-weight:700}
+.dwrap{display:flex;gap:6px;align-items:stretch;position:relative}
+.rptpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:4px 14px}
+.rptpick label,.rptph label{display:flex;gap:8px;align-items:center;font-size:12.5px;padding:6px 2px;cursor:pointer}
+.rptpick input,.rptph input{width:18px;height:18px;accent-color:var(--ac);flex:none}
+.rptph{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--ln)}
+.rptph label{flex-direction:column;align-items:stretch;gap:4px;padding:0}
+.rptph img{width:100%;height:84px;object-fit:cover;border-radius:6px;border:1px solid var(--ln2)}
+.rptph span{display:flex;gap:6px;align-items:center;font-size:11.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+input.badnum{border-color:var(--bd)!important;box-shadow:0 0 0 2px rgba(248,81,73,.25)!important}
+.dwrap input.dtxt{flex:1;min-width:0}
+.dwrap input.dtxt.bad{border-color:var(--bd)}
+.dwrap .btn{white-space:nowrap;padding:0 11px;min-height:40px}
+.dwrap input.dhid{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
+.mv .alt{display:block;font-size:10.5px;font-weight:500;opacity:.85;margin-top:2px}
 .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
 .nav{display:flex;gap:10px;justify-content:space-between;margin:4px 0 26px}
 .pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(126px,1fr));gap:9px}
@@ -270,10 +284,11 @@ table.kv td.s{width:3mm}
    <div class="seg" id="segTheme"><button data-t="dark" class="on">Dark</button><button data-t="light">Light</button></div>
    <button class="btn sm" id="btnNew">File Baru</button>
    <button class="btn sm" id="btnSave">Simpan</button>
+   <button class="btn sm" id="btnShare" title="Aplikasi + data + foto dalam satu file HTML">Simpan HTML</button>
    <button class="btn sm" id="btnOpen">Buka</button>
    <button class="btn sm" id="btnArc">Riwayat</button>
    <button class="btn sm" id="btnTest">Self-test</button>
-   <input type="file" id="fileIn" accept="application/json,.json" style="display:none">
+   <input type="file" id="fileIn" accept="application/json,.json,text/html,.html,.htm" style="display:none">
   </div>
  </div>
  <div class="steps" id="steps"></div>
@@ -425,6 +440,24 @@ var MM=SA.MIL_MM, IN=SA.IN_MM;
 function d2mm(v){return UNIT==='imp'? v*IN : v;}
 function mm2d(v){return UNIT==='imp'? v/IN : v;}
 function l2mm(v){return SA.l2mm(v,UNIT);} function mm2l(v){return SA.mm2l(v,UNIT);}
+/* v1.9 NUMBER ENTRY
+   Every value box used to be <input type="number">. That input only knows a
+   dot as the decimal mark. Typed with an Indonesian comma, 0,002 came back
+   from the browser as "" (Android: the value is silently dropped) or as
+   "0002" (desktop Chrome: the comma is stripped, 0,002 inch becomes 2 inch).
+   The box still SHOWED what was typed, so nothing looked wrong until the
+   file was reopened. All value boxes are now text boxes with a numeric
+   keypad, and num() reads both 0,002 and 0.002. A box that cannot be read
+   turns red instead of being dropped quietly.                             */
+function num(x){
+ var t=String(x==null?'':x).trim().replace(/\s+/g,''); if(!t) return NaN;
+ if(t.indexOf(',')>=0&&t.indexOf('.')>=0){
+  if(t.lastIndexOf(',')>t.lastIndexOf('.')) t=t.replace(/\./g,'').replace(',','.'); else t=t.replace(/,/g,'');
+ } else t=t.replace(',','.');
+ if(!/^[-+]?(\d+\.?\d*|\.\d+)$/.test(t)) return NaN;
+ return parseFloat(t);
+}
+function numOr(x,d){ var v=num(x); return isFinite(v)?v:d; }
 function uD(){return UNIT==='imp'?'inch':'mm';}
 /* ===== v1.5 DIAL INPUT UNIT =============================================
    Only the twelve dial reading boxes on the cross are keyed in MILS, and
@@ -532,8 +565,10 @@ var S={
  photos:[],
  graph:{cell:16,xper:1,yper:1,nx:36,ny:16,auto:true},
  sim:'eq',
+ rpt:{off:{}},                                     /* report sections left out of print / PDF */
  jobId:null
 };
+var S_FACTORY=JSON.stringify(S);
 function blankDia(){return {T:0,L:0,R:0,B:0};}
 function newPass(n){return {name:n,time:new Date().toISOString(),stat:blankDia(),mov:blankDia()};}
 /* ---- bar sag -----------------------------------------------------------
@@ -569,7 +604,59 @@ function movName(){return S.mach.movable==='driver'?driverName():drivenName();}
 function statName(){return S.mach.movable==='driver'?drivenName():driverName();}
 function movKey(){return S.mach.movable==='driver'?S.mach.driver:S.mach.driven;}
 function statKey(){return S.mach.movable==='driver'?S.mach.driven:S.mach.driver;}
-function viewMachine(){ return driverName(); }   /* ROTA.07 / ROTA.08: always from behind the driver */
+function viewMachine(){ return driverName(); }
+/* ===== v1.8 CHANGING THE MOVABLE MACHINE ================================
+   The reverse indicator boxes are labelled by the movable choice: 'stat' is
+   "bracket on MOVABLE, reading the STATIONARY hub", 'mov' the other set. Up
+   to v1.7 changing the movable machine only relabelled the boxes, so the
+   readings already keyed in silently swapped physical meaning and the
+   result was presented as a correction for the other machine's feet.
+   Now the two sets are exchanged in every pass, DESIRED included, so each
+   number stays with the bracket position it was read from. D2 and D3 still
+   point at the previous machine's feet and cannot be derived, so the job is
+   flagged until a dimension is re-entered. Face and rim readings were taken
+   with the bracket on the old movable machine and cannot be converted;
+   they are kept, flagged, and must be read again.                         */
+function passHasData(p){ return ['stat','mov'].some(function(w){ return ['T','L','R','B'].some(function(k){ return +((p[w]||{})[k]||0)!==0; }); }); }
+function setMovable(v){
+ if(v!==S.mach.movable&&v!=='driver'&&v!=='driven') return '';
+ if(v===S.mach.movable) return '';
+ var had=S.passes.some(passHasData);
+ S.mach.movable=v;
+ if(!had) return '';
+ S.mach.dimRecheck=true;
+ if(isFR()){ S.mach.readRecheck=true;
+  return LANG==='id'?'Movable: '+movName().toUpperCase()+'. Ambil ulang bacaan dan isi ulang D2/D3.'
+   :'Movable: '+movName().toUpperCase()+'. Retake the readings and re-enter D2/D3.'; }
+ S.passes.forEach(function(p){ var t=p.stat; p.stat=p.mov; p.mov=t; });
+ return LANG==='id'?'Movable: '+movName().toUpperCase()+'. Set bacaan ikut ditukar. Isi ulang D2/D3.'
+  :'Movable: '+movName().toUpperCase()+'. Reading sets exchanged. Re-enter D2/D3.';
+}
+function recheckBox(){
+ var m=S.mach||{}, h='';
+ if(m.dimRecheck) h+='<div class="box w" style="margin-bottom:10px;font-size:12.5px">'+(LANG==='id'
+   ?'Movable diganti ke '+esc(movName().toUpperCase())+'. Isi ulang D2 dan D3 ke kaki '+esc(movName().toUpperCase())+'.'
+   :'Movable changed to '+esc(movName().toUpperCase())+'. Re-enter D2 and D3 to the '+esc(movName().toUpperCase())+' feet.')+'</div>';
+ if(m.readRecheck) h+='<div class="box w" style="margin-bottom:10px;font-size:12.5px">'+(LANG==='id'
+   ?'Ambil ulang bacaan face & rim dengan bracket di '+esc(movName().toUpperCase())+'.'
+   :'Retake the face & rim readings with the bracket on the '+esc(movName().toUpperCase())+'.')+'</div>';
+ return h;
+}
+/* v1.8: ROTA.08 fixes left/right from behind the DRIVER. When the DRIVEN
+   machine is the one being moved, the fitter usually stands behind it and
+   faces the other way, so his left is the instruction's right. The rule is
+   unchanged; this only prints the same move in his frame as a second line. */
+function hAlt(v){
+ if(S.mach.movable!=='driven') return '';
+ var a=Math.abs(mm2d(v)), eps=UNIT==='imp'?0.00005:0.0005; if(a<eps) return '';
+ return LANG==='id' ? 'dari belakang '+movName().toUpperCase()+': ke '+(v>0?'KANAN':'KIRI')
+                    : 'from behind the '+movName().toUpperCase()+': '+(v>0?'RIGHT':'LEFT');
+}
+function hAltEn(v){
+ if(S.mach.movable!=='driven') return '';
+ var a=Math.abs(mm2d(v)), eps=UNIT==='imp'?0.00005:0.0005; if(a<eps) return '';
+ return 'from behind the '+(EQN[S.mach.driven]?(EQN[S.mach.driven].en||movName()):movName()).toUpperCase()+': '+(v>0?'RIGHT':'LEFT');
+}   /* ROTA.07 / ROTA.08: always from behind the driver */
 function viewNote(){ return LANG==='id'
  ? 'Kiri dan kanan ditentukan dari pandangan pengamat yang berdiri di belakang '+viewMachine().toUpperCase()+' dan menghadap ke arah kopling.'
  : 'Left and right are taken from an observer standing behind the '+viewMachine().toUpperCase()+' and facing the coupling.'; }
@@ -589,6 +676,18 @@ function defaultCrit(){
   {d:dr+' AXIAL FLOAT',dmin:0.002*IN,dmax:0.005*IN,act:'',rem:''},
   {d:dn+' AXIAL FLOAT',dmin:0.002*IN,dmax:0.005*IN,act:'',rem:''}
  ];
+}
+/* v1.9: picking a machine (even tapping the one already selected) used to
+   run S.crit=defaultCrit(), wiping every critical dimension entry. Rows now
+   keep their values; only the machine name at the start of a standard row
+   follows the new choice. Changing the movable machine touches nothing here
+   because the rows are named by driver and driven, not by movable. */
+function critRename(oldDr,oldDn){
+ if(!S.crit||!S.crit.length){ S.crit=defaultCrit(); return; }
+ var nd=driverName().toUpperCase(), nn=drivenName().toUpperCase();
+ S.crit.forEach(function(c){ var d=String(c.d||'');
+  if(oldDr&&d.indexOf(oldDr+' ')===0) c.d=nd+d.slice(oldDr.length);
+  else if(oldDn&&d.indexOf(oldDn+' ')===0) c.d=nn+d.slice(oldDn.length); });
 }
 function critAccept(c){
  if(c.act===''||c.act==null) return null;
@@ -1126,7 +1225,7 @@ function simEq(idx,axis,light){
  var s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
  s+='<rect width="'+W+'" height="'+H+'" fill="'+C.bg+'"/>';
  s+=tx(14,20,(LANG==='id'?'SIMULASI ':'SIMULATION ')+(axis==='v'?(LANG==='id'?'VERTIKAL · tampak samping':'VERTICAL · side view')
-   :(LANG==='id'?'HORIZONTAL · atas = KIRI (ROTA.08)':'HORIZONTAL · up = LEFT (ROTA.08)'))+' — '+esc(passName(idx)),{s:11.5,f:C.tx,w:700});
+   :'HORIZONTAL')+' — '+esc(passName(idx)),{s:11.5,f:C.tx,w:700});
  s+=tx(14,35,scaleNote(sc),{s:9,f:C.or});
  if(axis==='v') s+='<rect x="24" y="'+base+'" width="'+(W-48)+'" height="12" fill="'+C.mt2+'" stroke="'+C.ln+'"/>';
  if(axis==='h'){
@@ -1285,7 +1384,7 @@ function graphFig(axis,light){
  s+='<rect width="'+W+'" height="'+H+'" fill="'+(light?'#fff':C.bg)+'"/>';
  var axc=light?'#111':C.tx, mu=light?'#555':C.mu;
  s+=tx(14,22,(axis==='v'?(LANG==='id'?'GRAFIK ALIGNMENT — VERTIKAL (tampak samping)':'ALIGNMENT GRAPH — VERTICAL (side view)')
-   :(LANG==='id'?'GRAFIK ALIGNMENT — HORIZONTAL (atas = KIRI, ROTA.08)':'ALIGNMENT GRAPH — HORIZONTAL (up = LEFT, ROTA.08)')),{s:12,f:axc,w:700});
+   :(LANG==='id'?'GRAFIK ALIGNMENT — HORIZONTAL':'ALIGNMENT GRAPH — HORIZONTAL')),{s:12,f:axc,w:700});
  s+=tx(14,38,(LANG==='id'?'Skala mendatar: 1 kotak = ':'Horizontal scale: 1 square = ')+g.xper+
    (LANG==='id'?' inch panjang mesin':' inch of machine length'),{s:9.5,f:mu});
  s+=tx(14,51,(LANG==='id'?'Skala tegak: 1 kotak = ':'Vertical scale: 1 square = ')+g.yper+
@@ -1342,9 +1441,62 @@ function graphFig(axis,light){
 /* ===== BINDING ========================================================== */
 function gp(p){var o=S,a=p.split('.');for(var i=0;i<a.length;i++)o=o[a[i]];return o;}
 function sp(p,v){var o=S,a=p.split('.');for(var i=0;i<a.length-1;i++)o=o[a[i]];o[a[a.length-1]]=v;}
-function fld(lbl,path,kind,unit,type){
+/* v1.8 DATE FIELD
+   A bare <input type="date"> depends entirely on the browser's picker. On
+   the tablets in the field (Chrome and WebView viewers opening the file
+   from WhatsApp / the file manager) the picker often does not open, and a
+   date input cannot be typed into, so the field looked dead. The date is
+   now a plain text box that accepts typing (DD/MM/YYYY, DD-MM-YYYY,
+   DDMMYYYY or YYYY-MM-DD), with a Kalender button that opens the native
+   picker when the browser has one and a Hari ini button. Stored value is
+   still ISO YYYY-MM-DD, so files, file names and reports are unchanged.  */
+function parseDateIn(x){
+ x=String(x||'').trim(); if(!x) return null;
+ var m, y, mo, d;
+ if((m=x.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/))){ y=+m[1]; mo=+m[2]; d=+m[3]; }
+ else if((m=x.match(/^(\d{1,2})[-\/.\s](\d{1,2})[-\/.\s](\d{2}|\d{4})$/))){ d=+m[1]; mo=+m[2]; y=+m[3]; }
+ else if((m=x.match(/^(\d{2})(\d{2})(\d{4})$/))){ d=+m[1]; mo=+m[2]; y=+m[3]; }
+ else if((m=x.match(/^(\d{2})(\d{2})(\d{2})$/))){ d=+m[1]; mo=+m[2]; y=+m[3]; }
+ else return null;
+ if(y<100) y+=2000;
+ if(mo<1||mo>12||d<1||d>31||y<1990||y>2100) return null;
+ var t=new Date(Date.UTC(y,mo-1,d));
+ if(t.getUTCMonth()!==mo-1||t.getUTCDate()!==d) return null;     /* 31/02 etc. */
+ return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+}
+function showDate(iso){ var m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m? m[3]+'/'+m[2]+'/'+m[1] : (iso||''); }
+function dateFld(lbl,path){
  var id='f_'+path.replace(/\./g,'_');
- var t = type==='date'?' type="date"' : (kind==='txt'?'':' type="number" step="any" inputmode="decimal"');
+ return '<div class="f"><label><b>'+esc(lbl)+'</b><span class="u">DD/MM/YYYY</span></label><div class="dwrap">'+
+  '<input id="'+id+'" class="dtxt" data-date="'+path+'" type="text" inputmode="numeric" autocomplete="off" placeholder="DD/MM/YYYY">'+
+  '<button type="button" class="btn sm" data-dpick="'+path+'">'+(LANG==='id'?'Kalender':'Calendar')+'</button>'+
+  '<button type="button" class="btn sm" data-dtoday="'+path+'">'+(LANG==='id'?'Hari ini':'Today')+'</button>'+
+  '<input type="date" class="dhid" data-dhid="'+path+'" tabindex="-1" aria-hidden="true"></div></div>';
+}
+function bindDates(root){
+ root.querySelectorAll('[data-date]').forEach(function(e){
+  var p=e.getAttribute('data-date'), w=e.parentNode, hid=w.querySelector('[data-dhid]');
+  function put(iso){ sp(p,iso); e.value=showDate(iso); e.classList.remove('bad'); if(hid) hid.value=iso;
+   afterChange(); autosaveMark(); }
+  e.value=showDate(gp(p));
+  e.oninput=function(){ var iso=parseDateIn(this.value); this.classList.toggle('bad',!!this.value&&!iso);
+   if(iso){ sp(p,iso); if(hid) hid.value=iso; afterChange(); } };
+  e.onblur=function(){ var iso=parseDateIn(this.value); if(iso) this.value=showDate(iso); };
+  if(hid){ hid.value=gp(p)||'';
+   hid.onchange=hid.oninput=function(){ if(this.value) put(this.value); }; }
+  var bp=w.querySelector('[data-dpick]'), bt=w.querySelector('[data-dtoday]');
+  if(bp) bp.onclick=function(){
+   if(!hid) return; hid.value=gp(p)||today();
+   try{ if(typeof hid.showPicker==='function'){ hid.showPicker(); return; } }catch(err){}
+   /* no picker support: hand the keyboard to the text box instead */
+   e.focus(); e.select(); };
+  if(bt) bt.onclick=function(){ put(today()); };
+ });
+}
+function fld(lbl,path,kind,unit,type){
+ if(type==='date') return dateFld(lbl,path);
+ var id='f_'+path.replace(/\./g,'_');
+ var t = type==='date'?' type="date"' : (kind==='txt'?'':' type="text" inputmode="decimal" autocomplete="off" data-num="1"');
  return '<div class="f"><label><b>'+esc(lbl)+'</b>'+(unit?'<span class="u">'+unit+'</span>':'')+'</label>'+
   '<input id="'+id+'" data-p="'+path+'" data-k="'+kind+'"'+t+'></div>';
 }
@@ -1353,6 +1505,7 @@ function ta(lbl,path){
  return '<div class="f"><label><b>'+esc(lbl)+'</b></label><textarea id="'+id+'" data-p="'+path+'" data-k="txt"></textarea></div>';
 }
 function bindAll(root){
+ bindDates(root);
  var n=root.querySelectorAll('[data-p]');
  for(var i=0;i<n.length;i++){(function(e){
   var p=e.getAttribute('data-p'), k=e.getAttribute('data-k'), v=gp(p);
@@ -1361,9 +1514,9 @@ function bindAll(root){
   e.oninput=function(){
    var x=this.value;
    if(k==='txt') sp(p,x);
-   else if(k==='disp') sp(p,d2mm(parseFloat(x)||0));
-   else if(k==='len') sp(p,l2mm(parseFloat(x)||0));
-   else sp(p,parseFloat(x)||0);
+   else if(k==='disp') sp(p,d2mm(numOr(x,0)));
+   else if(k==='len') sp(p,l2mm(numOr(x,0)));
+   else sp(p,numOr(x,0));
    afterChange();
   };
  })(n[i]);}
@@ -1456,10 +1609,12 @@ function pane2(){
 function pickBind(){
  [['eqDrv','mach.driver'],['eqDvn','mach.driven']].forEach(function(q){
   var w=$(q[0]); if(!w) return; var b=w.querySelectorAll('button');
-  for(var i=0;i<b.length;i++) b[i].onclick=function(){ sp(q[1],this.getAttribute('data-v')); S.crit=defaultCrit(); draw(); };
+  for(var i=0;i<b.length;i++) b[i].onclick=function(){ var od=driverName().toUpperCase(), on=drivenName().toUpperCase();
+   sp(q[1],this.getAttribute('data-v')); critRename(od,on); draw(); };
  });
  var m=$('segMov'); if(m){ var mb=m.querySelectorAll('button');
-  for(var j=0;j<mb.length;j++) mb[j].onclick=function(){ S.mach.movable=this.getAttribute('data-v'); S.crit=defaultCrit(); draw(); }; }
+  for(var j=0;j<mb.length;j++) mb[j].onclick=function(){ var m=setMovable(this.getAttribute('data-v')); draw();
+   if(m) toast(m,0,7000); }; }
 }
 /* ===== 3 METHOD + COUPLING ============================================== */
 /* v1.5: flex plane wording is built in one place so the picker tile, the
@@ -1537,7 +1692,7 @@ function pane4(){
   ? fld('D1','dim.H','len',uL())+fld('D2','dim.D2','len',uL())+fld('D3','dim.D3','len',uL())+fld('Gap','dim.gap','len',uL())
   : fld('D1','dim.D1','len',uL())+fld('D2','dim.D2','len',uL())+fld('D3','dim.D3','len',uL());
  return '<div class="card"><h3>'+T('dimtitle')+'<span class="tag">'+methodName()+'</span></h3><div class="cb">'+
-  '<div id="dimFig" class="viz">'+dimFig(LT())+'</div>'+
+  recheckBox()+'<div id="dimFig" class="viz">'+dimFig(LT())+'</div>'+
   '<div class="grid '+(isFR()?'g4':'g3')+'" style="margin-top:13px">'+flds+'</div>'+
   '<p class="hint">'+L.map(function(q){return '<b>'+q[0]+'</b> = '+q[1];}).join('<br>')+'</p>'+
  '</div></div>'+
@@ -1591,9 +1746,9 @@ function critRender(){
   h+='<tr><td>'+(i+1)+'</td>'+
    '<td class="l"><input data-c="'+i+'" data-f="d" autocomplete="off" spellcheck="false" placeholder="'+
      (idL?'nama parameter':'parameter name')+'"></td>'+
-   '<td><input data-c="'+i+'" data-f="dmin" type="number" step="any" inputmode="decimal"></td>'+
-   '<td><input data-c="'+i+'" data-f="dmax" type="number" step="any" inputmode="decimal"></td>'+
-   '<td><input data-c="'+i+'" data-f="act" type="number" step="any" inputmode="decimal"></td>'+
+   '<td><input data-c="'+i+'" data-f="dmin" type="text" inputmode="decimal" autocomplete="off" data-num="1"></td>'+
+   '<td><input data-c="'+i+'" data-f="dmax" type="text" inputmode="decimal" autocomplete="off" data-num="1"></td>'+
+   '<td><input data-c="'+i+'" data-f="act" type="text" inputmode="decimal" autocomplete="off" data-num="1"></td>'+
    '<td id="critAcc'+i+'">'+critPill(c)+'</td>'+
    '<td><input data-c="'+i+'" data-f="rem" autocomplete="off"></td>'+
    '<td class="del"><button class="xbtn" data-del="'+i+'" title="'+(idL?'Hapus baris':'Delete row')+'"'+
@@ -1607,7 +1762,8 @@ function critRender(){
   else e.value=v==null?'':v;
   if(f==='d'||f==='rem') e.title=e.value;
   e.oninput=function(){
-   S.crit[idx][f]=(f==='d'||f==='rem')?this.value:(this.value===''?'':d2mm(parseFloat(this.value)||0));
+   var nv=num(this.value);
+   S.crit[idx][f]=(f==='d'||f==='rem')?this.value:(isFinite(nv)?d2mm(nv):'');
    if(f==='d'||f==='rem') this.title=this.value;
    /* only the acceptance cell depends on the numbers, so patch that one cell
       instead of rebuilding the table: rebuilding destroyed the focused input
@@ -1631,7 +1787,7 @@ function pane5(){
   '<div class="box i">'+proc+'</div><div class="grid g2" id="sfGrid">';
  FOOT.forEach(function(i){
   h+='<div class="f"><label><b>'+footLabel(i)+'</b><span class="u">'+uD()+'</span></label>'+
-     '<input id="sfi'+i+'" type="number" step="any" inputmode="decimal"></div>';
+     '<input id="sfi'+i+'" type="text" inputmode="decimal" autocomplete="off" data-num="1"></div>';
  });
  h+='</div><div class="grid g2" style="margin-top:12px">'+
    fld(LANG==='id'?'Toleransi soft foot':'Soft foot tolerance','sf.limit','disp',uD())+
@@ -1644,7 +1800,7 @@ function pane5(){
 }
 function sfBind(){
  FOOT.forEach(function(i){ var e=$('sfi'+i); e.value=S.sf.r[i]?mm2d(S.sf.r[i]).toFixed(dD()):'0';
-  e.oninput=function(){ S.sf.r[i]=d2mm(parseFloat(this.value)||0); sfRender(); }; });
+  e.oninput=function(){ S.sf.r[i]=d2mm(numOr(this.value,0)); sfRender(); }; });
  $('sfDone').onchange=function(){ S.sf.checked=this.checked; };
  sfRender();
 }
@@ -1683,7 +1839,7 @@ var POSDEG={T:'0°',R:'90°',B:'180°',L:'270°'};
 function xcell(w,pos){
  return '<div class="xcell"><span class="lb">'+POSDEG[pos]+'</span>'+
   '<div id="d_'+w+'_'+pos+'"></div>'+
-  '<div class="xin"><input id="i_'+w+'_'+pos+'" type="number" step="any" inputmode="decimal">'+
+  '<div class="xin"><input id="i_'+w+'_'+pos+'" type="text" inputmode="decimal" autocomplete="off" data-num="1">'+
   '<button id="s_'+w+'_'+pos+'" title="'+(LANG==='id'?'ubah tanda':'flip sign')+'">±</button></div>'+
   '<span class="xu">'+dialU()+'</span></div>';
 }
@@ -1694,13 +1850,13 @@ function pane6(){
   '<div class="grid g4">'+
   '<div class="f"><label><b>'+T('tolbasis')+'</b></label><select id="tolBasis">'+
    TOLB.map(function(t){return '<option value="'+t.k+'"'+(S.tol.basis===t.k?' selected':'')+'>'+esc(t.n[LANG]||t.n.en)+'</option>';}).join('')+'</select></div>'+
-  '<div class="f"><label><b>Speed</b><span class="u">RPM</span></label><input id="tolRpm" type="number" step="any" inputmode="decimal" value="'+S.tol.rpm+'"></div>'+
+  '<div class="f"><label><b>Speed</b><span class="u">RPM</span></label><input id="tolRpm" type="text" inputmode="decimal" autocomplete="off" data-num="1" value="'+S.tol.rpm+'"></div>'+
   '<div class="f" id="wG"><label><b>Grade</b></label><select id="tolGrade">'+
    SA.ANSI_GRADES.map(function(g){return '<option value="'+g.id+'"'+(S.tol.grade===g.id?' selected':'')+'>'+g.id+' '+g.n+'</option>';}).join('')+'</select></div>'+
   '<div class="f" id="wOA"><label><b>Grade</b></label><select id="tolGradeOA">'+
    [['AL1.2','AL1.2 Excellent'],['AL2.2','AL2.2 Acceptable']].map(function(g){return '<option value="'+g[0]+'"'+(S.tol.grade===g[0]?' selected':'')+'>'+g[1]+'</option>';}).join('')+'</select></div>'+
-  '<div class="f" id="wCO"><label><b>'+(LANG==='id'?'Offset parallel':'Parallel offset')+'</b><span class="u">'+uD()+'</span></label><input id="tolOff" type="number" step="any" inputmode="decimal"></div>'+
-  '<div class="f" id="wCA"><label><b>Angular</b><span class="u">in/in</span></label><input id="tolAng" type="number" step="any" inputmode="decimal"></div>'+
+  '<div class="f" id="wCO"><label><b>'+(LANG==='id'?'Offset parallel':'Parallel offset')+'</b><span class="u">'+uD()+'</span></label><input id="tolOff" type="text" inputmode="decimal" autocomplete="off" data-num="1"></div>'+
+  '<div class="f" id="wCA"><label><b>Angular</b><span class="u">in/in</span></label><input id="tolAng" type="text" inputmode="decimal" autocomplete="off" data-num="1"></div>'+
   '</div>'+
   '<div class="box i" style="margin-top:11px">'+(LANG==='id'?'Batas berlaku · offset ':'Limits in force · offset ')+
    '<b>'+fD(lim.offAcc)+' '+uD()+'</b> · angular <b>'+fA(lim.angAcc)+' in/in</b> · span flex plane '+fL(spanMM())+' '+uL()+
@@ -1708,8 +1864,8 @@ function pane6(){
   (lim.warn?'<div class="box w">'+lim.warn+'</div>':'')+
   '<p class="prov">'+((TOLPROV[S.tol.basis]||TOLPROV.cust)[LANG]||TOLPROV.cust.en)+'</p></div></div>';
 
- h+='<div class="card"><h3>'+T('s6')+'<span class="tag">'+esc(viewNote())+'</span></h3><div class="cb">'+
-  '<div class="sagbar"><b>Bar sag</b><input id="sagIn" type="number" step="any" inputmode="decimal">'+
+ h+='<div class="card"><h3>'+T('s6')+'<span class="tag">'+esc(viewNote())+'</span></h3><div class="cb">'+recheckBox()+
+  '<div class="sagbar"><b>Bar sag</b><input id="sagIn" type="text" inputmode="decimal" autocomplete="off" data-num="1">'+
   '<span>'+uD()+' &middot; '+(LANG==='id'
    ?'nilai droop bracket, selalu penambah: 180° + sag, 90° & 270° + ½ sag, 0° tetap. DESIRED tidak dikoreksi.'
    :'bracket droop, always additive: 180° + sag, 90° & 270° + ½ sag, 0° unchanged. DESIRED is not corrected.')+
@@ -1763,25 +1919,25 @@ function passBind(){
   var e=$('i_'+w+'_'+pos), b=$('s_'+w+'_'+pos);
   /* keyed in mils, stored in mm, everything downstream unchanged */
   e.value=(mm2dial(S.passes[ACTIVE][w][pos])||0).toFixed(dDial());
-  function sync(){ b.className=(parseFloat(e.value)||0)<0?'neg':''; }
-  e.oninput=function(){ S.passes[ACTIVE][w][pos]=dial2mm(parseFloat(this.value)||0); sync(); dialRefresh(); sumRender(); corrRender(); };
-  b.onclick=function(){ var v=-(parseFloat(e.value)||0); e.value=v.toFixed(dDial());
+  function sync(){ b.className=numOr(e.value,0)<0?'neg':''; }
+  e.oninput=function(){ S.passes[ACTIVE][w][pos]=dial2mm(numOr(this.value,0)); sync(); dialRefresh(); sumRender(); corrRender(); };
+  b.onclick=function(){ var v=-numOr(e.value,0); e.value=v.toFixed(dDial());
    S.passes[ACTIVE][w][pos]=dial2mm(v); sync(); dialRefresh(); sumRender(); corrRender(); };
   sync();
  });});
  var g=$('segSim6'); g.onclick=function(e){var b=e.target.closest('button');if(!b)return;
   S.sim=b.getAttribute('data-m'); var c=g.children; for(var i=0;i<c.length;i++)c[i].classList.toggle('on',c[i]===b); corrRender(); };
  var sg=$('sagIn'); sg.value=S.sag?mm2d(S.sag).toFixed(dD()):'';
- sg.oninput=function(){ S.sag=Math.abs(d2mm(parseFloat(this.value)||0)); dialRefresh(); sumRender(); corrRender(); };
+ sg.oninput=function(){ S.sag=Math.abs(d2mm(numOr(this.value,0))); dialRefresh(); sumRender(); corrRender(); };
  $('tolBasis').onchange=function(){S.tol.basis=this.value;
   if(this.value==='ansioa'&&S.tol.grade==='AL4.5') S.tol.grade='AL2.2'; draw();};
- $('tolRpm').oninput=function(){S.tol.rpm=parseFloat(this.value)||1500;corrRender();};
+ $('tolRpm').oninput=function(){S.tol.rpm=numOr(this.value,0)||1500;corrRender();};
  $('tolGrade').onchange=function(){S.tol.grade=this.value;draw();};
  $('tolGradeOA').onchange=function(){S.tol.grade=this.value;draw();};
  $('tolOff').value=S.tol.offAcc?mm2d(S.tol.offAcc).toFixed(dD()):'';
  $('tolAng').value=S.tol.angAcc||'';
- $('tolOff').oninput=function(){S.tol.offAcc=d2mm(parseFloat(this.value)||0);corrRender();};
- $('tolAng').oninput=function(){S.tol.angAcc=parseFloat(this.value)||0;corrRender();};
+ $('tolOff').oninput=function(){S.tol.offAcc=d2mm(numOr(this.value,0));corrRender();};
+ $('tolAng').oninput=function(){S.tol.angAcc=numOr(this.value,0);corrRender();};
  $('wG').style.display=S.tol.basis==='ansi'?'':'none';
  $('wOA').style.display=S.tol.basis==='ansioa'?'':'none';
  $('wCO').style.display=S.tol.basis==='cust'?'':'none';
@@ -1818,7 +1974,8 @@ function corrTable(r){
  function cell(v,ax){
   var a=Math.abs(mm2d(v));
   var w=ax==='v'?mvWordV(v):mvWordH(v), c=ax==='v'?mvClsV(v):mvClsH(v);
-  return '<span class="mv '+c+'">'+w+(c==='no'?'':' '+a.toFixed(dD()))+'</span>';
+  var alt=ax==='h'?hAlt(v):'';
+  return '<span class="mv '+c+'">'+w+(c==='no'?'':' '+a.toFixed(dD()))+(alt?'<span class="alt">'+esc(alt)+'</span>':'')+'</span>';
  }
  return '<table class="t"><tr><th>'+(LANG==='id'?'Arah':'Axis')+'</th><th>'+(LANG==='id'?'Kaki':'Foot')+'</th><th>'+
   (LANG==='id'?'Jarak':'Distance')+'</th><th>'+(LANG==='id'?'Nilai':'Value')+'</th><th>'+(LANG==='id'?'Tindakan':'Action')+'</th></tr>'+
@@ -1903,10 +2060,11 @@ function pane7(){
   $('gNY').oninput=function(){ S.graph.ny=+this.value||16; S.graph.auto=false; $('gAuto').checked=false; simRender(); };
   var sg7=$('segSim7'); sg7.onclick=function(e){var b=e.target.closest('button');if(!b)return;
    S.sim=b.getAttribute('data-m'); var c=sg7.children; for(var i=0;i<c.length;i++)c[i].classList.toggle('on',c[i]===b); simRender(); };
-  $('btnCam').onclick=function(){ $('phCam').click(); };
+  $('btnCam').onclick=function(){ CAM_PENDING=true; autosaveFlush(); $('phCam').click(); };
   $('btnLib').onclick=function(){ $('phLib').click(); };
   function take(inp){ inp.onchange=function(){
    var self=this, fs=Array.prototype.slice.call(this.files||[]); if(!fs.length) return;
+   CAM_PENDING=false;
    Promise.all(fs.map(addPhoto)).then(function(){ self.value=''; phRender(); photoChanged(); })
     .catch(function(){ toast(LANG==='id'?'Foto gagal dimuat':'Photo failed',1); }); }; }
   take($('phCam')); take($('phLib'));
@@ -1947,19 +2105,32 @@ function phRender(){
  g.querySelectorAll('[data-ph]').forEach(function(e){ e.oninput=function(){ S.photos[+this.getAttribute('data-ph')].cap=this.value; }; });
  g.querySelectorAll('[data-phdel]').forEach(function(e){ e.onclick=function(){ S.photos.splice(+this.getAttribute('data-phdel'),1); phRender(); photoChanged(); }; });
 }
+/* v1.9: the camera photo used to be read whole into a base64 string before
+   it was shrunk, roughly 15 to 20 MB of text for a 12 MP picture held next
+   to the decoded bitmap. On a tablet that is exactly the moment Android
+   reclaims memory from the browser, the page reloads, and the picture just
+   taken is gone. The file is now decoded straight from a blob URL and only
+   the 1280 px JPEG is kept. */
 function addPhoto(file){
  return new Promise(function(res,rej){
-  var r=new FileReader();
-  r.onload=function(){
+  var url=null;
+  try{ url=URL.createObjectURL(file); }catch(e){}
+  function fromSrc(src,done){
    var img=new Image();
    img.onload=function(){
-    var mx=1280, w=img.width, h=img.height, sc=Math.min(1,mx/Math.max(w,h));
-    var c=document.createElement('canvas'); c.width=Math.round(w*sc); c.height=Math.round(h*sc);
-    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-    S.photos.push({d:c.toDataURL('image/jpeg',0.72),cap:'',t:new Date().toISOString()}); res();
+    try{
+     var mx=1280, w=img.naturalWidth||img.width, h=img.naturalHeight||img.height, sc=Math.min(1,mx/Math.max(w,h));
+     var c=document.createElement('canvas'); c.width=Math.round(w*sc); c.height=Math.round(h*sc);
+     c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+     S.photos.push({d:c.toDataURL('image/jpeg',0.72),cap:'',t:new Date().toISOString()});
+     c.width=c.height=0; done(); res();
+    }catch(e){ done(); rej(e); }
    };
-   img.onerror=rej; img.src=r.result;
-  };
+   img.onerror=function(e){ done(); rej(e); }; img.src=src;
+  }
+  if(url){ fromSrc(url,function(){ try{ URL.revokeObjectURL(url); }catch(e){} }); return; }
+  var r=new FileReader();
+  r.onload=function(){ fromSrc(r.result,function(){}); };
   r.onerror=rej; r.readAsDataURL(file);
  });
 }
@@ -2003,15 +2174,27 @@ function buildReport(){
  var r=compute(), lim=r.lim, sf=SA.softFoot(S.sf.r,S.sf.limit);
  var des=S.passes[0], ini=S.passes[1]||S.passes[0], fin=S.passes[S.passes.length-1];
  var vc=r.worst==='g'?'rgood':(r.worst==='y'?'rmarg':'rbad');
- var phPages=Math.ceil(S.photos.length/4);
- RPTN=7+phPages;
- var pg=0, h='';
- function sheet(){ pg++; return '<div class="sheet">'+kopHTML(); }
+ /* v1.9: sections can be left out from the Laporan pane. Sections are
+    collected page by page; a page left empty is dropped, the remaining
+    sections are renumbered 1, 2, 3 ... and the page count follows. */
+ var phSel=S.photos.filter(function(p){ return !p.noRpt; });
+ var phPages=rptOff('photo')?0:Math.ceil(phSel.length/4);
+ var pg=0, h='', pages=[], cur='', num=0, lastKey='', lastNum=0;
+ function sheet(){ cur=''; return ''; }
+ function endPage(){ if(cur) pages.push(cur); cur=''; return ''; }
+ function S_(key,title,inner){
+  if(rptOff(key)) return '';
+  var t=String(title).replace(/^\d+b?\.\s*/,''), lab;
+  if(key===lastKey) lab=String(lastNum);
+  else if(key==='raw'&&lastKey==='data') lab=lastNum+'b';
+  else { num++; lab=String(num); lastNum=num; }
+  lastKey=key; cur+=sec(lab+'. '+t,inner); return '';
+ }
 
  h+=sheet();
- h+=sec('1. Job description', kv([['Equipment / Tag No.',S.job.tag],['Work Order (MWO)',S.job.mwo],
+ h+=S_('job','1. Job description', kv([['Equipment / Tag No.',S.job.tag],['Work Order (MWO)',S.job.mwo],
    ['Job description',S.job.desc],['Date',S.job.date],['Alignment performer',S.job.performer]]));
- h+=sec('2. Alignment setting', kv([['Driver',driverName()],['Driven',drivenName()],
+ h+=S_('setting','2. Alignment setting', kv([['Driver',driverName()],['Driven',drivenName()],
    ['Movable',movName()],['Stationary',statName()],
    ['Alignment method',methodName()+(isFR()?' (RIM + FACE, one bracket)':' (RIM + RIM, two planes)')],
    ['Coupling type',(CPLN[S.cpl.type][LANG]||CPLN[S.cpl.type].en)+' — '+cplChar().flex+' flex plane'+(cplChar().elast?', elastomeric link':'')],
@@ -2021,7 +2204,7 @@ function buildReport(){
       var vals=isFR()?[S.dim.H,S.dim.D2,S.dim.D3,S.dim.gap]:[S.dim.D1,S.dim.D2,S.dim.D3];
       return q[0]+' = '+fL(vals[k])+' '+uL(); }).join(' &nbsp; ')+
      ' &nbsp;<i>('+dimLabels().map(function(q){return q[0]+' '+q[1];}).join('; ')+')</i>',true]]));
- h+=sec('3. Specification',
+ h+=S_('spec','3. Specification',
   '<table class="rt"><tr><th style="width:26mm">Item</th><th>DRIVER : '+driverName().toUpperCase()+'</th><th>DRIVEN : '+drivenName().toUpperCase()+'</th></tr>'+
   '<tr><td>Manufacturer</td><td>'+esc(S.mach.drvMfr)+'</td><td>'+esc(S.mach.dvnMfr)+'</td></tr>'+
   '<tr><td>Type / Model</td><td>'+esc(S.mach.drvModel)+'</td><td>'+esc(S.mach.dvnModel)+'</td></tr>'+
@@ -2039,11 +2222,11 @@ function buildReport(){
    '<td class="n">'+((c.act===''||c.act==null)?'-':fD(c.act))+'</td>'+
    '<td class="c '+(ok===null?'':(ok?'rgood':'rbad'))+'">'+(ok===null?'-':(ok?'ACCEPTED':'REJECTED'))+'</td>'+
    '<td class="c">'+esc(c.rem)+'</td></tr>'; });
- h+=sec('4. Critical dimension ('+uD()+')', ct+'</table>');
- h+=foot(pg)+'</div>';
+ h+=S_('crit','4. Critical dimension ('+uD()+')', ct+'</table>');
+ h+=endPage();
 
  h+=sheet(); pal(true);
- h+=sec('5. Soft foot record — '+movName().toUpperCase(),
+ h+=S_('sf','5. Soft foot record — '+movName().toUpperCase(),
   '<div style="text-align:center">'+sfFig(true)+'</div>'+
   '<table class="rt" style="margin-top:1mm"><tr><th>Foot</th><th>I/B left</th><th>I/B right</th><th>O/B left</th><th>O/B right</th><th>Tolerance</th><th>Result</th></tr>'+
   '<tr><td>Lift ('+uD()+')</td>'+S.sf.r.map(function(v,k){return '<td class="n" style="'+(sf.soft.indexOf(k)>=0?'color:#b3231b;font-weight:700':'')+'">'+fD(v)+'</td>';}).join('')+
@@ -2051,12 +2234,12 @@ function buildReport(){
   '<div style="font-size:7.2pt;margin-top:1.2mm">Dial indicator on the foot, all bolts torqued, dial zeroed, one bolt only loosened, lift read, then re-torqued before the next foot. Left and right are taken from an observer standing behind the '+
   esc(viewMachine().toUpperCase())+' facing the coupling. Limit 0.002 in / 0.05 mm per ANSI/ASA S2.75 and API RP 686.'+
   (S.sf.note?'<br><b>Note:</b> '+esc(S.sf.note):'')+'</div>');
- h+=sec('6. Machine dimension','<div style="text-align:center">'+dimFig(true)+'</div>');
+ h+=S_('dim','6. Machine dimension','<div style="text-align:center">'+dimFig(true)+'</div>');
  pal(false); palUI();
- h+=foot(pg)+'</div>';
+ h+=endPage();
 
  h+=sheet();
- h+=sec('7. Alignment data — '+methodName()+', left / right viewed from behind the '+viewMachine().toUpperCase(),
+ h+=S_('data','7. Alignment data — '+methodName()+', left / right viewed from behind the '+viewMachine().toUpperCase(),
   '<div style="font-size:7.4pt;margin-bottom:1mm">Readings placed at 0°, 90°, 180° and 270°. Centre code is bracket location / dial location. Plane offset = (180° &minus; 0°)/2 vertical and (90° &minus; 270°)/2 horizontal. Validity 0°+180° = 90°+270°.'+
   (S.sag>0?' The diagrams show the readings after a bar sag correction of '+fD(S.sag)+' '+uD()+
    ' (180° + sag, 90° and 270° + &frac12; sag, DESIRED not corrected). Field readings as taken are listed in 7b.':'')+'</div>'+
@@ -2069,11 +2252,11 @@ function buildReport(){
   S.passes.forEach(function(p,k){ pt+='<tr><td>'+passName(k)+'</td>'+
    ['T','L','R','B'].map(function(q){return '<td class="n">'+fD(p.stat[q])+'</td>';}).join('')+
    ['T','L','R','B'].map(function(q){return '<td class="n">'+fD(p.mov[q])+'</td>';}).join('')+'</tr>'; });
-  h+=sec('7b. Dial readings as taken ('+uD()+')', pt+'</table>'+
+  h+=S_('raw','7b. Dial readings as taken ('+uD()+')', pt+'</table>'+
    '<div style="font-size:7.2pt;margin-top:.8mm">Bar sag '+fD(S.sag)+' '+uD()+
    (S.sag>0?' is applied to every pass except DESIRED before the offsets are computed.':' — no correction applied.')+'</div>');
  }
- h+=foot(pg)+'</div>';
+ h+=endPage();
 
  h+=sheet();
  var ot='<table class="rt"><tr><th style="width:20mm">Axis</th><th>Parameter</th><th style="width:24mm">Value</th><th style="width:24mm">Tolerance</th><th style="width:30mm">Status</th></tr>';
@@ -2086,7 +2269,7 @@ function buildReport(){
     '<td class="n">'+(p.kind==='ang'?fA(p.acc)+' in/in':fD(p.acc)+' '+uD())+'</td>'+
     '<td class="c '+cls+'">'+p.grade.txt+'</td></tr>'; });
  });
- h+=sec('8. Alignment offset — deviation of FINAL from DESIRED',
+ h+=S_('offset','8. Alignment offset — deviation of FINAL from DESIRED',
   '<div style="font-size:7.4pt;margin-bottom:1.2mm"><b>Acceptance criteria:</b> '+esc(lim.label)+
   ' &middot; flex plane span '+fL(spanMM())+' '+uL()+' &middot; offset limit '+fD(lim.offAcc)+' '+uD()+
   ' &middot; angular limit '+fA(lim.angAcc)+' in/in'+(lim.warn?'<br><b>Note:</b> '+esc(lim.warn):'')+'</div>'+
@@ -2094,8 +2277,9 @@ function buildReport(){
   '<div style="margin-top:1.6mm;font-size:9pt"><b>ALIGNMENT RESULT: <span class="'+vc+'">'+r.verdict+'</span></b></div>');
  function act(v,ax){ var a=Math.abs(mm2d(v)), eps=UNIT==='imp'?0.00005:0.0005;
   if(a<eps) return 'ON TARGET';
-  return (ax==='v'?(v>0?'ADD SHIM (UP)':'REMOVE SHIM (DOWN)'):(v>0?'PUSH LEFT':'PUSH RIGHT'))+' '+a.toFixed(dD()); }
- h+=sec('9. Correction required at the movable feet ('+movName().toUpperCase()+')',
+  var alt=ax==='h'?hAltEn(v):'';
+  return (ax==='v'?(v>0?'ADD SHIM (UP)':'REMOVE SHIM (DOWN)'):(v>0?'PUSH LEFT':'PUSH RIGHT'))+' '+a.toFixed(dD())+(alt?'<br><span style="font-size:6.8pt">'+esc(alt)+'</span>':''); }
+ h+=S_('corr','9. Correction required at the movable feet ('+movName().toUpperCase()+')',
   '<table class="rt"><tr><th style="width:20mm">Axis</th><th style="width:24mm">Foot</th><th style="width:26mm">Distance</th><th style="width:24mm">Value</th><th>Action</th></tr>'+
   '<tr class="vr"><td rowspan="2"><b>VERTICAL</b></td><td>INBOARD (I/B)</td><td class="n">D2 = '+fL(S.dim.D2)+' '+uL()+'</td><td class="n">'+fDs(r.move.ibV)+'</td><td class="c">'+act(r.move.ibV,'v')+'</td></tr>'+
   '<tr class="vr"><td>OUTBOARD (O/B)</td><td class="n">D3 = '+fL(S.dim.D3)+' '+uL()+'</td><td class="n">'+fDs(r.move.obV)+'</td><td class="c">'+act(r.move.obV,'v')+'</td></tr>'+
@@ -2103,48 +2287,81 @@ function buildReport(){
   '<tr class="hr"><td>OUTBOARD (O/B)</td><td class="n">D3 = '+fL(S.dim.D3)+' '+uL()+'</td><td class="n">'+fDs(r.move.obH)+'</td><td class="c">'+act(r.move.obH,'h')+'</td></tr></table>'+
   '<div style="font-size:7.2pt;margin-top:1mm">Vertical plus = add shim, minus = remove shim. Horizontal plus = push left, minus = push right, left and right seen from behind the '+
   esc(viewMachine().toUpperCase())+'. Values in '+uD()+'.</div>');
- h+=foot(pg)+'</div>';
+ h+=endPage();
 
  h+=sheet(); pal(true);
- h+=sec('10. Alignment simulation — equipment position',
+ h+=S_('sim','10. Alignment simulation — equipment position',
   '<div style="text-align:center">'+simEq(S.passes.length-1,'v',true)+'</div>'+
   '<div style="text-align:center;margin-top:1.5mm">'+simEq(S.passes.length-1,'h',true)+'</div>'+
   '<div style="font-size:7.2pt;margin-top:1mm">The axial scale is 1:1. The transverse scale is magnified by the factor printed on each frame, and the shaded band is the tolerance envelope about the desired centreline, so a centreline inside the band is inside tolerance.</div>');
  pal(false); palUI();
- h+=foot(pg)+'</div>';
+ h+=endPage();
 
  h+=sheet(); pal(true);
- h+=sec('11. Alignment line graph',
+ h+=S_('graph','11. Alignment line graph',
   '<div style="text-align:center">'+graphFig('v',true)+'</div>'+
   '<div style="text-align:center;margin-top:1.5mm">'+graphFig('h',true)+'</div>'+
-  '<div style="font-size:7.2pt;margin-top:1mm">Manual graphing convention, ROTA.08 sec. 2.2.3: vertical plus = UP, horizontal plus = LEFT (seen from behind the driver). Horizontal and vertical grid scales are printed on each frame. Heavy dash-dot line is the stationary shaft centreline taken as datum, the shaded band is the coupling. Purple dashed = desired, orange = as found, green = final.</div>');
+  '<div style="font-size:7.2pt;margin-top:1mm">Manual graphing convention (ROTA.08): vertical plus = up, horizontal plus = left seen from behind the driver. Horizontal and vertical grid scales are printed on each frame. Heavy dash-dot line is the stationary shaft centreline taken as datum, the shaded band is the coupling. Purple dashed = desired, orange = as found, green = final.</div>');
  pal(false); palUI();
- h+=foot(pg)+'</div>';
+ h+=endPage();
 
  for(var pi=0;pi<phPages;pi++){
   h+=sheet();
-  var sl=S.photos.slice(pi*4,pi*4+4);
+  var sl=phSel.slice(pi*4,pi*4+4);
   function cellp(p,k){ return '<td style="width:50%;border:0;padding:1mm;text-align:center"><img src="'+p.d+
     '" style="width:100%;max-height:76mm;object-fit:contain;border:.6pt solid #555"><div style="font-size:7.4pt;margin-top:.6mm">'+
     (pi*4+k+1)+'. '+esc(p.cap||'')+'</div></td>'; }
-  h+=sec('12. Photographic evidence'+(phPages>1?' ('+(pi+1)+'/'+phPages+')':''),
+  h+=S_('photo','12. Photographic evidence'+(phPages>1?' ('+(pi+1)+'/'+phPages+')':''),
    '<table class="rt" style="border:0"><tr>'+sl.slice(0,2).map(function(p,k){return cellp(p,k);}).join('')+'</tr>'+
    (sl.length>2?'<tr>'+sl.slice(2,4).map(function(p,k){return cellp(p,k+2);}).join('')+'</tr>':'')+'</table>');
-  h+=foot(pg)+'</div>';
+  h+=endPage();
  }
 
  h+=sheet();
- h+=sec((S.photos.length?'13':'12')+'. Evaluation and recommendation',
+ h+=S_('eval','Evaluation and recommendation',
   '<table class="rt"><tr><th style="width:50%">Evaluation &amp; analysis</th><th>Recommendation</th></tr>'+
   '<tr><td style="height:26mm;vertical-align:top">'+esc(S.ev.analysis).replace(/\n/g,'<br>')+'</td>'+
   '<td style="vertical-align:top">'+esc(S.ev.recommendation).replace(/\n/g,'<br>')+'</td></tr></table>');
- h+='<div class="sig"><table><tr><th style="width:32mm">Description</th><th>Name</th><th style="width:46mm">Title</th><th style="width:34mm">Signature</th><th style="width:24mm">Date</th></tr>'+
+ if(!rptOff('sig')) cur+='<div class="sig"><table><tr><th style="width:32mm">Description</th><th>Name</th><th style="width:46mm">Title</th><th style="width:34mm">Signature</th><th style="width:24mm">Date</th></tr>'+
   [['PERFORMED BY',S.sign.prepName,S.sign.prepTitle],['REVIEWED BY',S.sign.chkName,S.sign.chkTitle],
    ['APPROVED BY',S.sign.appName,S.sign.appTitle]].map(function(d){
    return '<tr><td>'+d[0]+'</td><td>'+esc(d[1]||'')+'</td><td>'+esc(d[2]||'')+'</td><td class="sp"></td><td></td></tr>'; }).join('')+
   '</table></div>';
- h+=foot(pg)+'</div>';
+ h+=endPage();
+ RPTN=pages.length;
+ h=pages.map(function(c,i){ return '<div class="sheet">'+kopHTML()+c+foot(i+1)+'</div>'; }).join('');
+ if(!pages.length) h='<div class="sheet">'+kopHTML()+'</div>';
  $('rep').innerHTML=h;
+ return pages.length;
+}
+function rptOff(k){ return !!(S.rpt&&S.rpt.off&&S.rpt.off[k]); }
+var RPT_ITEMS=[['job','Deskripsi pekerjaan','Job description'],['setting','Setting alignment','Alignment setting'],
+ ['spec','Spesifikasi mesin','Specification'],['crit','Critical dimension','Critical dimension'],
+ ['sf','Soft foot','Soft foot'],['dim','Dimensi mesin','Machine dimension'],
+ ['data','Data alignment','Alignment data'],['raw','Bacaan dial (tabel)','Dial readings table'],
+ ['offset','Offset & hasil alignment','Offset & result'],['corr','Koreksi kaki','Foot correction'],
+ ['sim','Simulasi posisi','Position simulation'],['graph','Grafik alignment','Alignment graph'],
+ ['photo','Foto','Photos'],['eval','Evaluasi & rekomendasi','Evaluation & recommendation'],['sig','Tanda tangan','Signatures']];
+function rptPick(){
+ var id=LANG==='id', h='<div class="rptpick">';
+ RPT_ITEMS.forEach(function(q){
+  h+='<label><input type="checkbox" data-rpt="'+q[0]+'"'+(rptOff(q[0])?'':' checked')+'> '+esc(id?q[1]:q[2])+'</label>'; });
+ h+='</div>';
+ if(S.photos.length&&!rptOff('photo')){
+  h+='<div class="rptph">'+S.photos.map(function(p,i){
+   return '<label><img src="'+p.d+'" alt=""><span><input type="checkbox" data-rph="'+i+'"'+(p.noRpt?'':' checked')+'> '+
+    (i+1)+(p.cap?'. '+esc(p.cap):'')+'</span></label>'; }).join('')+'</div>';
+ }
+ return h;
+}
+function rptBind(){
+ var w=$('rptBox'); if(!w) return;
+ w.innerHTML=rptPick();
+ w.onchange=function(e){ var t=e.target;
+  if(t.getAttribute('data-rpt')){ S.rpt.off[t.getAttribute('data-rpt')]=!t.checked; if(t.getAttribute('data-rpt')==='photo') rptBind(); }
+  else if(t.getAttribute('data-rph')){ var p=S.photos[+t.getAttribute('data-rph')]; if(p){ if(t.checked) delete p.noRpt; else p.noRpt=true; } }
+  buildReport(); };
+ var all=$('rptAll'); if(all) all.onclick=function(){ S.rpt.off={}; S.photos.forEach(function(p){ delete p.noRpt; }); rptBind(); buildReport(); autosaveMark(); };
 }
 function printReport(){
  buildReport();
@@ -2153,7 +2370,7 @@ function printReport(){
  setTimeout(function(){ document.title=old; },800);
 }
 function pane8(){
- setTimeout(function(){ buildReport(); $('rep').style.display='block'; },0);
+ setTimeout(function(){ rptBind(); buildReport(); $('rep').style.display='block'; },0);
  return '<div class="card noprint"><h3>'+(LANG==='id'?'Pengesahan':'Approval')+'</h3><div class="cb"><div class="grid g2">'+
   fld(LANG==='id'?'Performed by — nama':'Performed by — name','sign.prepName','txt')+
   fld(LANG==='id'?'Performed by — jabatan':'Performed by — title','sign.prepTitle','txt')+
@@ -2167,7 +2384,10 @@ function pane8(){
   '<button class="btn ok" onclick="exportXlsx()">'+(LANG==='id'?'Simpan sebagai Excel':'Save as Excel')+'</button>'+
   '<button class="btn" onclick="buildReport()">'+T('gen')+'</button>'+
   '<button class="btn" onclick="doSave(1)">'+(LANG==='id'?'Simpan + file':'Save + file')+'</button>'+
-  '<span style="font-size:11.5px;color:var(--mu)">'+esc(fileBase())+'.pdf &middot; '+esc(fileBase())+'.xlsx</span></div></div></div>';
+  '<span style="font-size:11.5px;color:var(--mu)">'+esc(fileBase())+'.pdf &middot; '+esc(fileBase())+'.xlsx</span></div></div></div>'+
+ '<div class="card noprint"><h3>'+(LANG==='id'?'Isi laporan':'Report contents')+
+  '<span class="tag"><button class="btn sm" id="rptAll">'+(LANG==='id'?'Pilih semua':'Select all')+'</button></span></h3>'+
+  '<div class="cb" id="rptBox"></div></div>';
 }
 
 /* ===== STORAGE ========================================================== */
@@ -2218,17 +2438,35 @@ var autoTimer=null, autoOn=false;
         tablet still holds for the SAME job id (autosave mirror or archive)
         puts them back, says so, and leaves the job DIRTY so the next save
         writes them into the file.                                         */
-var DIRTY=false;
+var DIRTY=false, SAVED_SIG=null;
+/* DIRTY is derived, not flagged: the state is compared with the state last
+   written to (or read from) a file. Just moving between sections redraws
+   and used to light the Save button although nothing had changed. Photo
+   data is reduced to length + tail so the comparison stays cheap. */
+function stateSig(){
+ return JSON.stringify(S,function(k,v){
+  if(k==='jobId') return undefined;
+  if(k==='d'&&typeof v==='string'&&v.length>200) return v.length+':'+v.slice(-40);
+  return v; });
+}
+function markSaved(){ SAVED_SIG=stateSig(); saveBadge(); }
+function markUnsaved(){ SAVED_SIG=null; saveBadge(); }
+/* v1.9: CAM_PENDING is written into the mirror just before the camera app is
+   opened. If Android kills the page while the camera is in front, the
+   restore sees the flag and says plainly that the last photo did not make
+   it, instead of the photo just vanishing. */
+var CAM_PENDING=false, AUTO_FAIL_WARNED=false;
 function saveBadge(){
+ DIRTY=(SAVED_SIG===null)||(stateSig()!==SAVED_SIG);
  var b=$('btnSave');
  if(b){ b.classList.toggle('unsaved',DIRTY); b.textContent=DIRTY?'Simpan \u2022':'Simpan';
-  b.title=DIRTY?(LANG==='id'?'Ada perubahan yang belum masuk file JSON':'Changes not yet written to the JSON file'):''; }
+  b.title=DIRTY?(LANG==='id'?'Ada perubahan yang belum disimpan':'Unsaved changes'):''; }
  var w=$('phWarn');
  if(w) w.innerHTML=(DIRTY&&S.photos&&S.photos.length)?'<div class="box w" style="margin-top:10px;font-size:12px">'+(LANG==='id'
-   ?'<b>'+S.photos.length+' foto belum masuk file JSON.</b> Tekan <b>Simpan</b> (atau Simpan + file di bagian 8). File JSON itulah yang dibawa pindah; riwayat dan pemulihan otomatis di tablet ini tidak ikut terbawa.'
-   :'<b>'+S.photos.length+' photos are not in the JSON file yet.</b> Press <b>Save</b>. The JSON file is what travels; this tablet\'s history and auto-restore do not.')+'</div>':'';
+   ?'Perubahan dan '+S.photos.length+' foto belum disimpan ke file.'
+   :'Changes and '+S.photos.length+' photos are not saved to file yet.')+'</div>':'';
 }
-function photoChanged(){ DIRTY=true; saveBadge(); if(autoOn){ clearTimeout(autoTimer); autosaveFlush(); } }
+function photoChanged(){ saveBadge(); if(autoOn){ clearTimeout(autoTimer); autosaveFlush(); } }
 function photoKey(p){ var d=(p&&p.d)||''; return d.length+'|'+d.slice(-64); }
 /* adds to rec.S.photos every local photo it does not already carry; returns
    the number added. Pure, so it is covered by the test suite. */
@@ -2257,7 +2495,7 @@ function openRec(rec){
   var m=migrate(rec); if(!m||!m.S) throw new Error('bad file');
   var rescued=mergePhotos(m,lp);
   if(!applyJob(m)) throw new Error('bad file');
-  DIRTY=rescued>0; saveBadge();
+  if(rescued>0) markUnsaved(); else markSaved();
   dbPut(m).catch(function(){});
   return {rec:m, rescued:rescued, photos:S.photos.length};
  });
@@ -2293,10 +2531,13 @@ function autosaveFlush(){
  if(!autoOn) return;
  clearTimeout(autoTimer); autoTimer=null;
  var rec; try{ rec=packJob(); }catch(e){ return; }
- rec.id=AUTO_KEY; rec.auto=1; rec.jobId=S.jobId||null; rec.step=STEP; rec.active=ACTIVE; rec.dirty=DIRTY;
- dbAutoPut(rec).catch(function(){});
+ DIRTY=(SAVED_SIG===null)||(stateSig()!==SAVED_SIG);
+ rec.id=AUTO_KEY; rec.auto=1; rec.jobId=S.jobId||null; rec.step=STEP; rec.active=ACTIVE; rec.dirty=DIRTY; rec.camPending=CAM_PENDING;
+ dbAutoPut(rec).catch(function(e){
+  if(AUTO_FAIL_WARNED) return; AUTO_FAIL_WARNED=true;
+  toast((LANG==='id'?'Penyimpanan otomatis gagal. Tekan Simpan.':'Auto-save failed. Press Save.'),1,6000); });
 }
-function autosaveMark(){ if(!autoOn) return; if(!DIRTY){ DIRTY=true; saveBadge(); } clearTimeout(autoTimer); autoTimer=setTimeout(autosaveFlush,350); }
+function autosaveMark(){ if(!autoOn) return; clearTimeout(autoTimer); autoTimer=setTimeout(function(){ saveBadge(); autosaveFlush(); },350); }
 function rbarHide(){ var b=$('rbar'); if(b){ b.style.display='none'; b.innerHTML=''; } }
 function rbarShow(rec){
  var b=$('rbar'); if(!b) return;
@@ -2310,32 +2551,56 @@ function rbarShow(rec){
  b.style.display='block';
 }
 function autosaveRestore(){
- return dbAutoGet().then(function(rec){
+ var emb=embeddedJob();
+ if(emb) return dbAutoGet().catch(function(){return null;}).then(function(rec){
+  var newer=rec&&rec.S&&rec.jobId&&rec.jobId===emb.id&&String(rec.saved||'')>String(emb.saved||'')&&stateHasContent(rec.S);
+  if(newer) return restoreAuto(rec);
+  return openRec(emb).then(function(o){ return 'emb'; }).catch(function(){ return false; });
+ });
+ return dbAutoGet().then(restoreAuto).catch(function(){ return false; });
+}
+function restoreAuto(rec){
+ return Promise.resolve(rec).then(function(rec){
   if(!rec||!rec.S) return false;
   if(rec.saved&&(Date.now()-new Date(rec.saved).getTime())>AUTO_MAX_AGE) return dbAutoClear().then(function(){return false;});
   if(!stateHasContent(rec.S)) return false;
   if(!applyJob(rec)) return false;
   S.jobId=rec.jobId||null;
-  DIRTY=(rec.dirty===undefined)?true:!!rec.dirty; saveBadge();
+  if(rec.dirty===false) markSaved(); else markUnsaved();
   if(rec.lang) LANG=rec.lang;
   if(typeof rec.step==='number') STEP=Math.max(0,Math.min(7,rec.step));
   if(typeof rec.active==='number') ACTIVE=Math.max(0,Math.min(rec.active,S.passes.length-1));
   var u=$('segUnit').children; for(var i=0;i<u.length;i++) u[i].classList.toggle('on',u[i].getAttribute('data-u')===UNIT);
   var l=$('segLang').children; for(var k=0;k<l.length;k++) l[k].classList.toggle('on',l[k].getAttribute('data-l')===LANG);
   renderSteps(); draw(); rbarShow(rec);
+  if(rec.camPending) setTimeout(function(){ toast(LANG==='id'
+   ?'Foto terakhir tidak tersimpan. Ambil ulang, atau gunakan Dari galeri.'
+   :'The last photo was not saved. Take it again, or use From gallery.',1,8000); },1200);
   return true;
  }).catch(function(){ return false; });
 }
+function storageGuard(){
+ try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(function(){}); }catch(e){}
+}
 function autosaveWire(){
+ storageGuard();
+ document.addEventListener('input',function(e){ var t=e.target;
+  if(t&&t.getAttribute&&t.getAttribute('data-num')){ var v=t.value.trim();
+   t.classList.toggle('badnum', v!==''&&!/^[-+]$/.test(v)&&!isFinite(num(v))); } },true);
  document.addEventListener('input',autosaveMark,true);
  document.addEventListener('change',autosaveMark,true);
  window.addEventListener('pagehide',autosaveFlush);
  document.addEventListener('visibilitychange',function(){
-  if(document.visibilityState==='hidden') autosaveFlush(); });
+  if(document.visibilityState==='hidden') autosaveFlush();
+  /* back from the camera with the page still alive: the photo either arrived
+     through onchange or was cancelled, so the pending flag is no longer true */
+  else if(CAM_PENDING) setTimeout(function(){ if(CAM_PENDING){ CAM_PENDING=false; autosaveFlush(); } },2500); });
  autosaveRestore().then(function(r){
   autoOn=true;
-  if(r) toast(LANG==='id'?'Sesi sebelumnya dipulihkan':'Previous session restored');
- }).catch(function(){ autoOn=true; });
+  if(!r) markSaved();
+  if(r==='emb') toast(S.job.tag+' \u00b7 '+S.photos.length+(LANG==='id'?' foto':' photos'));
+  else if(r) toast(LANG==='id'?'Sesi sebelumnya dipulihkan':'Previous session restored');
+ }).catch(function(){ autoOn=true; markSaved(); });
 }
 function packJob(){
  var r=null; try{ r=compute(); }catch(e){}
@@ -2377,6 +2642,9 @@ function migrate(rec){
  if(['ansi','ansioa','api','cust'].indexOf(d.tol.basis)<0) d.tol.basis='api';   /* retired bases map to API */
  if(!d.ev) d.ev={analysis:'',recommendation:''};
  if(!d.photos) d.photos=[];
+ if(!(+d.sag>=0)) d.sag=0;
+ if(!d.rpt||typeof d.rpt!=='object') d.rpt={off:{}};
+ if(!d.rpt.off) d.rpt.off={};
  if(!d.graph) d.graph={cell:16,xper:1,yper:1,nx:36,ny:16,auto:true};
  if(d.graph.nx===undefined) d.graph.nx=36;
  if(d.graph.ny===undefined) d.graph.ny=16;
@@ -2395,8 +2663,10 @@ function applyJob(rec){
  rec=migrate(rec);
  if(!rec||!rec.S) return false;
  var d=rec.S;
- ['method','view','job','sign','mach','cpl','dim','sf','crit','passes','tol','ev','photos','graph','sim','finalConfirmed'].forEach(function(k){
-  if(d[k]!==undefined) S[k]=d[k]; });
+ /* v1.9: the key list was written by hand and missed 'sag', so the bar sag
+    came back as 0 on every Open and every pass after DESIRED was graded on
+    uncorrected readings. Every field the state has is now restored. */
+ Object.keys(S).forEach(function(k){ if(k==='jobId') return; if(d[k]!==undefined) S[k]=d[k]; });
  if(!S.photos) S.photos=[];
  if(!S.sign) S.sign={prepName:'',prepTitle:'',chkName:'',chkTitle:'',appName:'',appTitle:''};
  if(!S.graph) S.graph={cell:16,xper:1,yper:1,auto:true};
@@ -2409,6 +2679,43 @@ function applyJob(rec){
  var u=$('segUnit').children; for(var i=0;i<u.length;i++) u[i].classList.toggle('on',u[i].getAttribute('data-u')===UNIT);
  renderSteps(); draw(); return true;
 }
+/* v1.9 JOB HTML
+   The JSON needs a copy of BISA on the other side. The job HTML is BISA
+   itself with the job, photos included, embedded as a JSON block, so it can
+   be sent over WhatsApp or e-mail and opened on any phone, tablet or PC.
+   PRISTINE is the page as parsed, taken before init() touches the DOM; an
+   older embedded job is replaced, never stacked. Buka also reads it.     */
+var PRISTINE=null;
+var JOBTAG_RE=/<script type="application\/json" id="bisaJob">[\s\S]*?<\/script>\s*/g;
+function jobHtml(rec){
+ var base=PRISTINE||('<!DOCTYPE html>\n'+document.documentElement.outerHTML);
+ base=base.replace(JOBTAG_RE,'');
+ /* the opening tag is assembled so this source never contains it verbatim,
+    otherwise JOBTAG_RE would match inside the app's own code */
+ var blk='<scr'+'ipt type="application/json" id="'+'bisaJob">'+JSON.stringify(rec).replace(/</g,'\\u003c')+'<\/script>\n';
+ var at=base.lastIndexOf('</body>');
+ return at<0? base+blk : base.slice(0,at)+blk+base.slice(at);
+}
+function jobFromHtml(text){
+ var m=String(text).match(/<script type="application\/json" id="bisaJob">([\s\S]*?)<\/script>/);
+ return m? JSON.parse(m[1]) : null;
+}
+function embeddedJob(){
+ var e=document.getElementById('bisaJob'); if(!e) return null;
+ try{ return JSON.parse(e.textContent); }catch(err){ return null; }
+}
+function exportHtml(){
+ var rec=packJob(); S.jobId=rec.id;
+ var name=fileBase()+'.html';
+ var blob=new Blob([jobHtml(rec)],{type:'text/html'});
+ var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+ document.body.appendChild(a); a.click(); document.body.removeChild(a);
+ setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+ dbPut(rec).catch(function(){});
+ markSaved();
+ toast((LANG==='id'?'Tersimpan: ':'Saved: ')+name+' \u00b7 '+(rec.S.photos||[]).length+(LANG==='id'?' foto':' photos'),0,3500);
+ return rec;
+}
 function exportFile(){
  var rec=packJob(); S.jobId=rec.id;
  var blob=new Blob([JSON.stringify(rec)],{type:'application/json'});
@@ -2420,16 +2727,17 @@ function doSave(withFile){
  var rec=packJob(); S.jobId=rec.id;
  dbPut(rec).then(function(){
   if(withFile){ var out=exportFile(), n=(out.S.photos||[]).length;
-   DIRTY=false; saveBadge();
-   toast((LANG==='id'?'Tersimpan di arsip + file ':'Saved to archive + file ')+jobFileName()+
-    ' \u00b7 '+n+(LANG==='id'?' foto di dalam file':' photos inside the file'),0,4200); }
+   markSaved();
+   toast((LANG==='id'?'Tersimpan: ':'Saved: ')+jobFileName()+' \u00b7 '+n+(LANG==='id'?' foto':' photos'),0,3500); }
   else toast((LANG==='id'?'Tersimpan: ':'Saved: ')+jobFileName());
  }).catch(function(e){ toast(String(e),1); });
 }
 function importFile(f){
  return new Promise(function(res,rej){
   var r=new FileReader();
-  r.onload=function(){ var rec; try{ rec=JSON.parse(r.result); }catch(e){ return rej(e); }
+  r.onload=function(){ var rec, t=String(r.result||'');
+   try{ rec=/^\s*</.test(t)? jobFromHtml(t) : JSON.parse(t); }catch(e){ return rej(e); }
+   if(!rec) return rej(new Error('no job'));
    openRec(rec).then(res,rej); };
   r.onerror=function(){rej(r.error);}; r.readAsText(f); });
 }
@@ -2477,7 +2785,7 @@ function openArchive(){
     S.sf={r:[0,0,0,0],limit:2*MM,note:'',checked:false};
     S.crit=S.crit.map(function(c){ return {d:c.d,dmin:c.dmin,dmax:c.dmax,act:'',rem:''}; });
     S.passes=[S.passes[0],newPass('initial')]; S.finalConfirmed=false;
-    S.photos=[]; S.ev={analysis:'',recommendation:''}; S.jobId=null; ACTIVE=1; STEP=0; DIRTY=false; saveBadge();
+    S.photos=[]; S.ev={analysis:'',recommendation:''}; S.jobId=null; ACTIVE=1; STEP=0; markSaved();
     renderSteps(); draw(); $('arcModal').style.display='none';
     toast(LANG==='id'?'Mesin, dimensi, toleransi dan DESIRED dipakai ulang':'Machine, dimensions, tolerance and DESIRED reused');
    }); }; });
@@ -2494,8 +2802,8 @@ function openArchive(){
 function openMsg(name,o){
  var s=(LANG==='id'?'Dimuat: ':'Loaded: ')+name+' \u00b7 '+o.photos+(LANG==='id'?' foto':' photos');
  if(o.rescued) s+=LANG==='id'
-  ?' \u00b7 '+o.rescued+' foto tidak ada di file dan dipulihkan dari tablet ini. Tekan Simpan agar ikut di file.'
-  :' \u00b7 '+o.rescued+' photos were missing from the file and were recovered from this tablet. Press Save to write them in.';
+  ?' \u00b7 '+o.rescued+' foto dipulihkan dari tablet, simpan ulang'
+  :' \u00b7 '+o.rescued+' photos recovered from this tablet, save again';
  return s;
 }
 function toast(msg,bad,ms){
@@ -2509,7 +2817,7 @@ function newJob(){
  S.mach=m; S.dim=d; S.cpl=c; S.sign=sg;
  S.sf={r:[0,0,0,0],limit:2*MM,note:'',checked:false};
  S.crit=defaultCrit(); S.passes=[]; ensurePasses(); S.finalConfirmed=false; S.photos=[]; S.ev={analysis:'',recommendation:''};
- S.jobId=null; ACTIVE=1; STEP=0; rbarHide(); dbAutoClear(); DIRTY=false; saveBadge();
+ S.jobId=null; ACTIVE=1; STEP=0; rbarHide(); dbAutoClear(); markSaved();
  renderSteps(); draw();
  toast(LANG==='id'?'File baru':'New file');
 }
@@ -2523,12 +2831,15 @@ function post(){
  if(STEP===5) passBind();
 }
 function afterChange(){
- if(STEP===3){ if($('dimFig')) $('dimFig').innerHTML=dimFig(LT()); critRender(); }
+ if(STEP===3){ if($('dimFig')) $('dimFig').innerHTML=dimFig(LT()); critRender();
+  if(S.mach.dimRecheck){ var ae=document.activeElement, dp=ae&&ae.getAttribute&&ae.getAttribute('data-p');
+   if(dp==='dim.D2'||dp==='dim.D3'){ S.mach.dimRecheck=false; } } }
  if(STEP===4) sfRender();
  if(STEP===5){ dialRefresh(); sumRender(); corrRender(); }
  if(STEP===6){ resRender(); simRender(); }
 }
 function init(){
+ try{ PRISTINE='<!DOCTYPE html>\n'+document.documentElement.outerHTML; }catch(e){}
  $('brandLogo').src=LOGO;
  setupIcons();
  $('brandSub').textContent='BISA v'+APP_VER+' \u00b7 Mechanical Section';
@@ -2548,6 +2859,7 @@ function init(){
   setTheme(b.getAttribute('data-t'));};
  $('btnTest').onclick=runTests;
  $('btnSave').onclick=function(){ doSave(1); };
+ $('btnShare').onclick=exportHtml;
  $('btnArc').onclick=openArchive;
  $('btnNew').onclick=newJob;
  $('btnOpen').onclick=function(){ $('fileIn').click(); };
@@ -2662,7 +2974,7 @@ function cplIcon(k){
 function bodyFor(axis,k,F,L,H,col,fill){ return axis==='v'? eqBody(k,F,L,H,col) : eqPlan(k,F,L,H,col); }
 
 /* ===== VERSION ========================================================== */
-var APP_VER='1.7', APP_BY='AWA', APP_NAME='BISA — Badak LNG Integrated Shaft Alignment';
+var APP_VER='1.9', APP_BY='AWA', APP_NAME='BISA — Badak LNG Integrated Shaft Alignment';
 /* Schema version of the saved file. The reader below accepts every version
    ever written, so an old job file always opens in a newer build.        */
 var FILE_SCHEMA=7;
@@ -3216,7 +3528,8 @@ function buildReportXlsx(){
     ?'IF(ABS(G'+n+')<0.00005,"ON TARGET",IF(G'+n+'>0,"ADD SHIM (UP) "&TEXT(G'+n+',"0.0000"),"REMOVE SHIM (DOWN) "&TEXT(-G'+n+',"0.0000")))'
     :'IF(ABS(G'+n+')<0.00005,"ON TARGET",IF(G'+n+'>0,"PUSH LEFT "&TEXT(G'+n+',"0.0000"),"PUSH RIGHT "&TEXT(-G'+n+',"0.0000")))',s:11});
    g.band(rr,8,NCOL-1,11); g.merge(rr,8,rr,NCOL-1); });
-  g.note('Vertical plus = add shim, minus = remove shim. Horizontal plus = push left, minus = push right, left and right seen from behind the '+driverName().toUpperCase()+'. Values in inch.');
+  g.note('Vertical plus = add shim, minus = remove shim. Horizontal plus = push left, minus = push right, left and right seen from behind the '+driverName().toUpperCase()+'. Values in inch.'+
+   (S.mach.movable==='driven'?'  Seen from behind the '+movName().toUpperCase()+' the directions are reversed.':''));
   g.BRK.push(g.G.length);
   /* ---- 10 ---- */
   g.sec('10. ALIGNMENT SIMULATION — EQUIPMENT POSITION');
@@ -3226,7 +3539,7 @@ function buildReportXlsx(){
   /* ---- 11 ---- */
   g.sec('11. ALIGNMENT LINE GRAPH');
   pushImg(F.grv,700); pushImg(F.grh,700);
-  g.note('ROTA.08 sec. 2.2.3 convention: vertical plus = UP, horizontal plus = LEFT seen from behind the driver. Horizontal and vertical grid scales are printed on each frame. Heavy dash-dot line is the stationary shaft centreline taken as datum, the shaded band is the coupling.');
+  g.note('ROTA.08 convention: vertical plus = up, horizontal plus = left seen from behind the driver. Horizontal and vertical grid scales are printed on each frame. Heavy dash-dot line is the stationary shaft centreline taken as datum, the shaded band is the coupling.');
   /* ---- 12 photos ---- */
   if(S.photos.length){
    g.BRK.push(g.G.length);
@@ -3290,9 +3603,11 @@ function synthRev(vA,vB,hA,hB,D1){
 function synthFR(vA,vB,hA,hB,H){
  return {name:'x',stat:mkDia(vA,-hA), mov:mkDia(-vB*H/2, hB*H/2)};
 }
+/* tests start from the factory state, not from whatever job is open: a job
+   with bar sag (now restored on Open) made eight geometry tests fail */
 function withState(f){
- var keep=JSON.stringify(S), ku=UNIT, r;
- try{ r=f(); } finally { S=JSON.parse(keep); UNIT=ku; }
+ var keep=JSON.stringify(S), ku=UNIT, kl=LANG, r;
+ try{ S=JSON.parse(S_FACTORY); S.crit=defaultCrit(); UNIT='imp'; r=f(); } finally { S=JSON.parse(keep); UNIT=ku; LANG=kl; }
  return r;
 }
 var TESTS=[
@@ -3791,6 +4106,157 @@ var TESTS=[
    ['empty file gets both back',added,2],['no duplicates',emptyFile.S.photos.length,2],
    ['partial file gets only the missing one',added2,1],['order kept',partial.S.photos[1].d===p2.d,true]]);
  });}},
+{n:'XL-3  Field practice 20 Oct 2026, turbine (driver, stationary) to generator (movable)',
+ d:'D1 29, D2 78, D3 184 inch, bar sag 4 mils, readings keyed raw in mils exactly as on the tablet.\n'+
+   '  desired  Gen>Turb L .001 R -.003 B -.002    Turb>Gen L .002 R -.002 B 0\n'+
+   '  raw      Gen>Turb L 5  R 17  B 22 mils     Turb>Gen L -19 R -29 B -46 mils\n'+
+   '  sag 4    Gen>Turb L .007 R .019 B .026      Turb>Gen L -.017 R -.027 B -.042  (= the Excel ACTUAL row)\n'+
+   'Excel 261020: V1 .014 V2 -.007, near -.0328 far -.0584 (down); H V1 .008 V2 .005, near +.0054 far\n'+
+   '+.0237, PLUS = MOVE LEFT. Turb>Gen fails validity by .002 (0+180 = -.042, 90+270 = -.044). With the\n'+
+   'generator movable the second line reads ke KANAN from behind the GENERATOR.',
+ f:function(){ return withState(function(){
+  var I=function(v){return v*IN;}, M=function(v){return v*SA.MIL_MM;};
+  S.method='rev'; S.dim={D1:I(29),D2:I(78),D3:I(184),H:I(6),gap:I(29)}; S.tol.basis='api'; S.sag=M(4);
+  S.mach.driver='turbine'; S.mach.driven='generator'; S.mach.movable='driven'; LANG='id';
+  S.passes=[{name:'desired',stat:{T:0,L:I(0.001),R:I(-0.003),B:I(-0.002)},mov:{T:0,L:I(0.002),R:I(-0.002),B:0}},
+            {name:'initial',stat:{T:0,L:M(5),R:M(17),B:M(22)},mov:{T:0,L:M(-19),R:M(-29),B:M(-46)}}];
+  S.finalConfirmed=false;
+  var r=solveIdx(1), e=effPass(1), vs=SA.diamondValid(e.stat), vm=SA.diamondValid(e.mov);
+  var n=ck([['sag corrected Gen>Turb B, inch',e.stat.B/IN,0.026],['sag corrected Turb>Gen L, inch',e.mov.L/IN,-0.017],
+   ['I/B vertical',r.move.ibV/IN,-0.0328275862],['O/B vertical',r.move.obV/IN,-0.0584137931],
+   ['I/B horizontal, left',r.move.ibH/IN,0.0054482759],['O/B horizontal, left',r.move.obH/IN,0.0237241379],
+   ['Gen>Turb validity, inch',vs.diff/IN,0],['Turb>Gen validity, inch',vm.diff/IN,0.002]]);
+  var t=ckS([['first box is bracket on the generator',diaTitle('stat'),'Generator → Turbin'],
+   ['instruction word',mvWordH(r.move.ibH),'DORONG KE KIRI'],
+   ['fitter frame line',hAlt(r.move.ibH),'dari belakang GENERATOR: ke KANAN']]);
+  return {pass:n.pass&&t.pass, detail:n.detail+'\n'+t.detail};
+ });}},
+{n:'MOV-1  Changing the movable machine keeps each reading with its bracket',
+ d:'Up to v1.7 the boxes were only relabelled, so readings silently changed physical meaning. Now the two\n'+
+   'reverse sets are exchanged in every pass, DESIRED included, D2/D3 are flagged for re-measurement, and\n'+
+   'switching back restores the original job exactly. Face and rim is flagged for retaking instead.',
+ f:function(){ return withState(function(){
+  var I=function(v){return v*IN;};
+  S.method='rev'; S.mach.driver='turbine'; S.mach.driven='generator'; S.mach.movable='driven'; S.mach.dimRecheck=false;
+  S.passes=[{name:'desired',stat:{T:0,L:I(0.001),R:I(-0.003),B:I(-0.002)},mov:{T:0,L:I(0.002),R:I(-0.002),B:0}},
+            {name:'initial',stat:{T:0,L:I(0.007),R:I(0.019),B:I(0.026)},mov:{T:0,L:I(-0.017),R:I(-0.027),B:I(-0.042)}}];
+  var before=JSON.stringify(S.passes);
+  var msg=setMovable('driver');
+  var a=S.passes[1].stat.B/IN, b=S.passes[0].mov.R/IN, title=diaTitle('stat'), flag=S.mach.dimRecheck;
+  var same=setMovable('driver');
+  setMovable('driven'); var back=JSON.stringify(S.passes)===before;
+  S.method='fr'; S.mach.readRecheck=false; var fBefore=JSON.stringify(S.passes); setMovable('driver');
+  var frKept=JSON.stringify(S.passes)===fBefore, frFlag=S.mach.readRecheck;
+  S.method='rev'; S.passes=[newPass('desired'),newPass('initial')]; S.mach.dimRecheck=false; setMovable('driven');
+  var emptyFlag=S.mach.dimRecheck;
+  var n=ck([['set read ON the generator hub moves to the first box',a,-0.042],['DESIRED exchanged too',b,-0.003]]);
+  var t=ckS([['first box now bracket on the turbine',title,'Turbin → Generator'],['D2/D3 flagged',flag,true],
+   ['user is told',msg.length>0,true],['same choice again does nothing',same,''],
+   ['switching back restores the job',back,true],['face & rim not exchanged',frKept,true],['face & rim flagged for retake',frFlag,true],
+   ['empty job is not flagged',emptyFlag,false]]);
+  return {pass:n.pass&&t.pass, detail:n.detail+'\n'+t.detail};
+ });}},
+{n:'DATE-1  Date field accepts typing in the formats used on site',
+ d:'The native date picker does not open on every tablet browser and cannot be typed into. The field is\n'+
+   'now text: DD/MM/YYYY, DD-MM-YYYY, DDMMYYYY, DD/MM/YY and ISO are accepted, impossible dates are refused,\n'+
+   'and the stored value stays ISO so file names and old files are unchanged.',
+ f:function(){
+  return ckS([['DD/MM/YYYY',parseDateIn('20/10/2026'),'2026-10-20'],['DD-MM-YYYY',parseDateIn('7-9-2024'),'2024-09-07'],
+   ['DDMMYYYY',parseDateIn('20102026'),'2026-10-20'],['DD/MM/YY',parseDateIn('20/10/26'),'2026-10-20'],
+   ['ISO',parseDateIn('2026-10-20'),'2026-10-20'],['31 Feb refused',parseDateIn('31/02/2026'),null],
+   ['month 13 refused',parseDateIn('01/13/2026'),null],['text refused',parseDateIn('kemarin'),null],
+   ['shown as DD/MM/YYYY',showDate('2026-10-20'),'20/10/2026']]); }},
+{n:'SAVE-1  Every field keyed in comes back after Save and Open',
+ d:'A job is filled in every section, packed exactly as Simpan writes it, turned into JSON text and\n'+
+   'opened through applyJob(), the same path as Buka. Up to v1.8 the bar sag was not in applyJob\n'+
+   'and came back as 0, so every pass after DESIRED was graded on uncorrected readings.',
+ f:function(){ return withState(function(){
+  var I=function(v){return v*IN;}, M=function(v){return v*SA.MIL_MM;};
+  S.method='rev'; S.job={performer:'CHARLES',date:'2026-10-20',tag:'31-PI-14',mwo:'4711',desc:'PM 2Y',revision:'1'};
+  S.mach.driver='turbine'; S.mach.driven='generator'; S.mach.movable='driven';
+  S.dim={D1:I(29),D2:I(78),D3:I(184),H:I(7),gap:I(29)};
+  S.crit=defaultCrit(); S.crit[0].act=I(0.25); S.crit[3].act=I(0.0015); S.crit[3].rem='ok';
+  S.crit.push({d:'THRUST',dmin:I(0.01),dmax:I(0.015),act:I(0.0135),rem:'x'});
+  S.passes=[{name:'desired',time:'t',stat:{T:0,L:I(0.001),R:I(-0.003),B:I(-0.002)},mov:{T:0,L:I(0.002),R:I(-0.002),B:0}},
+            {name:'initial',time:'t',stat:{T:0,L:M(5),R:M(17),B:M(22)},mov:{T:0,L:M(-19),R:M(-29),B:M(-46)}}];
+  S.sag=M(4); S.sf={r:[0.01,0.02,0,0.03],limit:0.0508,note:'A',checked:true};
+  S.tol={basis:'cust',rpm:3000,grade:'AL1.2',offAcc:I(0.002),angAcc:0.0004}; S.ev={analysis:'an',recommendation:'rec'};
+  S.photos=[{d:'data:image/jpeg;base64,/9j/'+('Z'.repeat(400)),cap:'hub',t:'t'}];
+  var ref=solveIdx(1), want=JSON.stringify(S);
+  var text=JSON.stringify(packJob());
+  S.sag=0; S.crit=defaultCrit(); S.photos=[]; S.passes=[newPass('desired'),newPass('initial')];
+  var ok=applyJob(JSON.parse(text)), r=solveIdx(1);
+  var got=JSON.parse(JSON.stringify(S)); delete got.jobId; var w=JSON.parse(want); delete w.jobId;
+  var diffs=Object.keys(w).filter(function(k){ return JSON.stringify(w[k])!==JSON.stringify(got[k]); });
+  var n=ck([['bar sag back, mils',S.sag/SA.MIL_MM,4],['coupling gap actual back, inch',S.crit[0].act/IN,0.25],
+   ['added row actual back, inch',S.crit[7].act/IN,0.0135],['I/B horizontal unchanged',r.move.ibH,ref.move.ibH],
+   ['O/B vertical unchanged',r.move.obV,ref.move.obV]]);
+  var t=ckS([['opened',ok,true],['fields that differ',diffs.join(',')||'none','none'],['photo back',S.photos.length,1]]);
+  return {pass:n.pass&&t.pass, detail:n.detail+'\n'+t.detail};
+ });}},
+{n:'NUM-1  Comma or dot, a typed value is read the same',
+ d:'The value boxes were <input type="number">, which drops 0,002 on Android and turns it into 2 on\n'+
+   'desktop Chrome. They are text boxes now and num() reads both decimal marks.',
+ f:function(){
+  var bad=num('0,0,2'), empty=num('');
+  var n=ck([['0,002',num('0,002'),0.002],['0.002',num('0.002'),0.002],['4,5 mils',num('4,5'),4.5],['-7',num('-7'),-7],
+   ['-0,5',num('-0,5'),-0.5],['1.234,5',num('1.234,5'),1234.5],[' 12 ',num(' 12 '),12],['0, while typing',num('0,'),0]]);
+  var t=ckS([['0,0,2 is unreadable',isNaN(bad),true],['empty is unreadable',isNaN(empty),true],
+   ['no number boxes left',document.querySelectorAll('input[type=number]:not(#gNX):not(#gNY)').length,0]]);
+  return {pass:n.pass&&t.pass, detail:n.detail+'\n'+t.detail}; }},
+{n:'CRIT-2  Picking a machine keeps the critical dimension entries',
+ d:'Tapping any machine tile, even the one already selected, used to reset the whole list. Values now\n'+
+   'stay; only the machine name at the start of a standard row follows the new choice.',
+ f:function(){ return withState(function(){
+  var I=function(v){return v*IN;};
+  S.mach.driver='motor'; S.mach.driven='pump'; S.crit=defaultCrit();
+  S.crit[0].act=I(0.25); S.crit[1].act=I(0.0015); S.crit.push({d:'THRUST',dmin:'',dmax:'',act:I(0.01),rem:''});
+  var od=driverName().toUpperCase(), on=drivenName().toUpperCase();
+  S.mach.driven='generator'; critRename(od,on);
+  var a=S.crit[1].act/IN, b=S.crit[2].d, c=S.crit[7].act/IN, n7=S.crit.length;
+  od=driverName().toUpperCase(); on=drivenName().toUpperCase(); critRename(od,on);
+  var n=ck([['hub run out actual kept',a,0.0015],['added row kept',c,0.01],['gap kept',S.crit[0].act/IN,0.25]]);
+  var t=ckS([['driven row renamed',b,drivenName().toUpperCase()+' COUPLING HUB RUN OUT'],['row count kept',n7,8],
+   ['same machine again changes nothing',S.crit[2].d,b]]);
+  return {pass:n.pass&&t.pass, detail:n.detail+'\n'+t.detail};
+ });}},
+{n:'SHARE-1  The job HTML carries the whole job, photos included',
+ d:'Simpan HTML writes BISA itself with the job embedded, so the file can be sent by message and opened\n'+
+   'anywhere. Saving again from such a file replaces the embedded job instead of adding a second one, and\n'+
+   'Buka reads the job back out of the HTML.',
+ f:function(){ return withState(function(){
+  S.job.tag='31-PI-14'; S.sag=4*SA.MIL_MM;
+  S.photos=[{d:'data:image/jpeg;base64,/9j/'+('Q'.repeat(300))+'<'+'/script>',cap:'hub',t:'t'}];
+  var h1=jobHtml(packJob()), back=jobFromHtml(h1);
+  S.photos.push({d:'data:image/jpeg;base64,/9j/BB',cap:'',t:''});
+  var h2=jobHtml(packJob()).replace(/^/,''), b2=jobFromHtml(h2);
+  var count=function(h){ return (h.match(new RegExp('<scr'+'ipt type="application/json" id="'+'bisaJob">','g'))||[]).length; };
+  var hasApp=h1.indexOf('function solveIdx(')>0 && h1.indexOf('</html>')>0;
+  return ckS([['job read back from the HTML',back&&back.S.job.tag,'31-PI-14'],['photo intact',back&&back.S.photos[0].d===S.photos[0].d,true],
+   ['bar sag carried',back&&Math.round(back.S.sag/SA.MIL_MM),4],['one job block',count(h1),1],
+   ['second save still one block',count(jobHtml(Object.assign(packJob(),{}))) ,1],
+   ['second save carries the new photo',b2&&b2.S.photos.length,2],['the app itself is inside',hasApp,true]]);
+ });}},
+{n:'RPT-1  Report sections can be left out and the rest renumbers',
+ d:'Unticked sections disappear from print and PDF, pages left empty are dropped, the remaining sections are\n'+
+   'numbered 1, 2, 3 without gaps, the page count follows, and a photo can be left out on its own.',
+ f:function(){ return withState(function(){
+  S.passes=[newPass('desired'),newPass('initial')];
+  S.photos=[{d:'data:image/jpeg;base64,/9j/AA',cap:'a',t:''},{d:'data:image/jpeg;base64,/9j/BB',cap:'b',t:''}];
+  var full=buildReport(), fullTxt=$('rep').innerText;
+  S.rpt={off:{spec:true,sf:true,dim:true,sim:true,graph:true,sig:true}}; S.photos[1].noRpt=true;
+  var cut=buildReport(), html=$('rep').innerHTML, txt=$('rep').innerText;
+  var heads=Array.prototype.map.call($('rep').querySelectorAll('.sec h4'),function(e){ return e.textContent; });
+  var n=0, seq=heads.every(function(x){ if(/^\d+b\. /.test(x)) return x.indexOf(n+'b. ')===0; n++; return x.indexOf(n+'. ')===0; });
+  var photosIn=(html.match(/data:image\/jpeg;base64,\/9j\/(AA|BB)/g)||[]).join(',');
+  S.rpt={off:{}}; S.photos=[]; buildReport();
+  return ckS([['full report pages',full,8],['pages after leaving 5 sections out',cut,5],
+   ['specification gone',txt.indexOf('Specification')<0,true],['soft foot gone',txt.indexOf('Soft foot record')<0,true],
+   ['signature gone',txt.indexOf('PERFORMED BY')<0,true],['correction kept',txt.indexOf('Correction required')>=0,true],
+   ['numbering has no gaps',seq,true],['first heading',heads[0],'1. Job description'],
+   ['page count printed',txt.indexOf('Page 5 of 5')>=0,true],['only the ticked photo',photosIn,'data:image/jpeg;base64,/9j/AA'],
+   ['full report had soft foot',fullTxt.indexOf('Soft foot record')>=0,true]]);
+ });}},
 {n:'LOAD-1  Old job files still open',
  d:'A file written by any earlier build must load. Fields that did not exist then are filled from the\n'+
    'current defaults and a tolerance basis that has since been retired falls back to API RP 686 rather\n'+
@@ -3849,6 +4315,7 @@ function runTests(){
    '<span class="pill '+(r.pass?'g':'r')+'">'+(r.pass?'PASS':'FAIL')+'</span>'+esc(t.n)+'</div>'+
    '<p style="margin:5px 0 0;font-size:11.5px;color:var(--mu);line-height:1.55">'+esc(t.d).replace(/\n/g,'<br>')+'</p>'+
    '<pre style="margin:6px 0 0;font-family:var(--mono);font-size:11px;color:#a5b4c4;background:#0a0e13;border:1px solid var(--ln);border-radius:6px;padding:8px 10px;overflow:auto;white-space:pre-wrap">'+esc(r.detail)+'</pre></div>';});
+ try{ renderSteps(); draw(); }catch(e){}   /* SAVE-1 drives applyJob; put the user's job back on screen */
  $('testSum').innerHTML='<b style="color:'+(p===TESTS.length?'#3fb950':'#f85149')+'">'+p+' / '+TESTS.length+' passed</b>';
  $('testBody').innerHTML=h; $('testModal').style.display='block';
  return p===TESTS.length;
