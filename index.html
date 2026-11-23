@@ -80,9 +80,26 @@ main{max-width:1560px;margin:0 auto;padding:16px}
 .btn.ok{border-color:var(--ok);color:var(--ok2)}
 .btn.unsaved{border-color:var(--wn);color:var(--wn);font-weight:700}
 .dwrap{display:flex;gap:6px;align-items:stretch;position:relative}
-.rptpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:4px 14px}
-.rptpick label,.rptph label{display:flex;gap:8px;align-items:center;font-size:12.5px;padding:6px 2px;cursor:pointer}
-.rptpick input,.rptph input{width:18px;height:18px;accent-color:var(--ac);flex:none}
+.rptlist{columns:2 320px;column-gap:14px}
+.rptrow{break-inside:avoid;margin-bottom:6px;display:flex;align-items:center;gap:11px;padding:8px 10px;border:1px solid var(--ln);border-radius:9px;cursor:pointer;background:var(--pn2)}
+.rptrow .no{flex:none;min-width:34px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+ font-family:var(--mono);font-weight:700;font-size:12px;background:var(--ac);color:#fff}
+.rptrow .tt{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.rptrow .tt b{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rptrow .tt small{font-size:11px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rptrow .pg{flex:none;font-size:11px;color:var(--mu);font-family:var(--mono)}
+.rptrow .sw{flex:none;position:relative;width:38px;height:22px}
+.rptrow .sw input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.rptrow .sw i{position:absolute;inset:0;border-radius:11px;background:var(--ln2);transition:background .15s}
+.rptrow .sw i:after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+.rptrow .sw input:checked+i{background:var(--ok)}
+.rptrow .sw input:checked+i:after{left:19px}
+.rptrow.off{opacity:.55}
+.rptrow.off .no{background:var(--ln2);color:var(--mu)}
+.rptph input{width:18px;height:18px;accent-color:var(--ac);flex:none}
+.rptph label{display:flex;gap:8px;align-items:center;font-size:12.5px;cursor:pointer}
+.rptph label.off img{opacity:.35}
+.sgx{margin-top:10px;padding-top:10px;border-top:1px dashed var(--ln)}
 .rptph{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--ln)}
 .rptph label{flex-direction:column;align-items:stretch;gap:4px;padding:0}
 .rptph img{width:100%;height:84px;object-fit:cover;border-radius:6px;border:1px solid var(--ln2)}
@@ -164,9 +181,10 @@ table.t.crit col.c-no{width:40px}
 table.t.crit col.c-desc{width:34%}
 table.t.crit col.c-num{width:104px}
 table.t.crit col.c-acc{width:118px}
-table.t.crit col.c-del{width:46px}
+table.t.crit col.c-del{width:104px}
 table.t.crit td.l input{font-family:inherit;font-weight:600;font-size:12.5px;text-transform:uppercase}
-table.t.crit td.del{text-align:center;font-family:inherit}
+table.t.crit td.del{text-align:center;font-family:inherit;white-space:nowrap}
+table.t.crit td.del .xbtn{margin:0 1px}
 table.t.crit td .pill{white-space:nowrap}
 @media (max-width:1040px){
  table.t.crit{min-width:756px}
@@ -175,7 +193,7 @@ table.t.crit td .pill{white-space:nowrap}
  table.t.crit col.c-desc{width:30%}
  table.t.crit col.c-num{width:84px}
  table.t.crit col.c-acc{width:100px}
- table.t.crit col.c-del{width:40px}
+ table.t.crit col.c-del{width:100px}
 }
 .xbtn{background:0;border:1px solid var(--ln2);border-radius:6px;color:var(--mu);width:27px;height:27px;
  line-height:1;cursor:pointer;font-size:15px;font-weight:700;padding:0;font-family:inherit}
@@ -220,7 +238,24 @@ table.t.crit td .pill{white-space:nowrap}
 .arcmain span{display:block;font-size:10.5px;color:var(--mu);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* ---------- report sheet ---------- */
 #rep{background:#fff;color:#111;border-radius:8px;padding:0;overflow:auto}
-.sheet{width:210mm;margin:0 auto 10px;background:#fff;padding:7mm 8mm 5mm;font-family:Arial,Helvetica,sans-serif;color:#000;font-size:8.2pt;position:relative}
+#rep{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.sheet{width:210mm;min-height:297mm;box-sizing:border-box;margin:0 auto 10px;background:#fff;padding:7mm 9mm 6mm;font-family:Arial,Helvetica,sans-serif;color:#000;font-size:8.2pt;position:relative;display:flex;flex-direction:column}
+.sheet.land{width:297mm;min-height:210mm}
+.sheet .body{flex:1 1 auto}
+.sheet .foot{margin-top:auto}
+.ptop{display:flex;justify-content:space-between;font-size:7pt;color:#333;margin-bottom:1.6mm}
+.ptop b{font-weight:700;color:#000;letter-spacing:.2pt}
+table.rt.cmp th,table.rt.cmp td{padding:.2mm 1mm;font-size:7.2pt;line-height:1.25}
+table.xgridr{width:100%;border-collapse:collapse;table-layout:fixed}
+table.xgridr th{font-size:7.8pt;text-align:center;padding:.8mm 1mm;background:#eef2f8;border:.5pt solid #9aa7ba}
+table.xgridr th span{font-weight:400;font-size:7.2pt}
+table.xgridr td{border:.5pt solid #c3ccd8;padding:.6mm 1.5mm .8mm;vertical-align:top}
+table.xgridr td svg{display:block;width:100%;max-width:56mm;margin:0 auto}
+.xoff{font-size:7.2pt;text-align:center;margin-top:.3mm}
+.sagbox{display:flex;gap:3mm;align-items:center;border:1pt solid #b35309;border-left:2.4mm solid #b35309;background:#fff4e5;padding:1mm 2.4mm;margin:.8mm 0 1.2mm}
+.sagbox b{font-size:8.6pt;white-space:nowrap}
+.sagbox span{font-size:7.4pt}
+.sagbox.zero{border-color:#888;background:#f4f4f4}
 .kop{display:flex;align-items:center;gap:5mm;border:1.1pt solid #000;padding:2.4mm 3mm}
 .kop img{height:13mm;width:auto}
 .kop .ti{flex:1;text-align:center}
@@ -231,12 +266,12 @@ table.t.crit td .pill{white-space:nowrap}
 .kop .mt table{width:100%;border-collapse:collapse}
 .kop .mt td{padding:.3mm 0;border:0}
 .sec{margin-top:2mm;border:.9pt solid #000}
-.sec>h4{background:#1f3864;color:#fff;font-size:8pt;padding:.9mm 2mm;letter-spacing:.3pt;text-transform:uppercase}
+.sec>h4{background:#dfe6f1;color:#0b2350;font-size:8.4pt;font-weight:700;padding:1mm 2mm;letter-spacing:.3pt;text-transform:uppercase;border-left:2.2mm solid #1f3864;border-bottom:.6pt solid #1f3864}
 .sec .in{padding:1.4mm 2mm}
 table.rt{width:100%;border-collapse:collapse;font-size:7.6pt}
 table.rt th,table.rt td{border:.6pt solid #555;padding:.5mm 1.1mm;text-align:left;vertical-align:middle}
 table.rt th{background:#e8edf5;font-weight:700;font-size:7.5pt;text-transform:uppercase}
-table.rt td.c{text-align:center}table.rt td.n{font-family:"Courier New",monospace;text-align:center}
+table.rt td.c{text-align:center}table.rt td.n{font-family:inherit;font-variant-numeric:tabular-nums;text-align:center}
 table.rt tr.vr td{background:#eef4fd}table.rt tr.hr td{background:#f6f0fd}
 table.kv{width:100%;border-collapse:collapse;font-size:7.8pt}
 table.kv td{padding:.32mm 1.4mm;border:0;vertical-align:top}
@@ -253,9 +288,13 @@ table.kv td.s{width:3mm}
  header,.steps,main>.nav,.noprint,#app,#arcModal,#testModal,#toast{display:none!important}
  body{background:#fff}
  #rep{display:block!important;padding:0;border-radius:0}
- .sheet{width:auto;min-height:auto;margin:0;padding:0;page-break-after:always}
+ .sheet{margin:0!important;min-height:296mm;page-break-after:always;break-after:page;box-shadow:none}
+ .sheet.land{page:land;min-height:209mm}
+ /* the preview box scrolls; in print it must not clip the 297 mm landscape sheets */
+ #rep,main{overflow:visible!important}
  .sheet:last-child{page-break-after:auto}
- @page{size:A4 portrait;margin:9mm}
+ @page{size:A4 portrait;margin:0}
+ @page land{size:A4 landscape;margin:0}
 }
 #gCtl input[type=number],#gCtl select{background:var(--inp);border:1px solid var(--ln2);border-radius:7px;
  padding:6px 8px;color:var(--tx);font-family:var(--mono);font-size:12px}
@@ -549,7 +588,7 @@ var S={
  method:'rev',
  view:'driver',                                   /* left-right reference viewpoint */
  job:{performer:'',date:today(),tag:'',mwo:'',desc:'',revision:'0'},
- sign:{prepName:'',prepTitle:'',chkName:'',chkTitle:'',appName:'',appTitle:''},
+ sign:{prepName:'',prepTitle:'',chkName:'',chkTitle:'',appName:'',appTitle:'',extra:[]},
  mach:{driver:'motor',driven:'pump',driverCustom:'',drivenCustom:'',movable:'driver',
   drvMfr:'',drvModel:'',drvCpl:'',drvVolt:'',drvHz:'',drvSpeed:'',
   dvnMfr:'',dvnModel:'',dvnCpl:'',dvnBrg:'',dvnSpeed:''},
@@ -570,7 +609,18 @@ var S={
 };
 var S_FACTORY=JSON.stringify(S);
 function blankDia(){return {T:0,L:0,R:0,B:0};}
-function newPass(n){return {name:n,time:new Date().toISOString(),stat:blankDia(),mov:blankDia()};}
+function newPass(n){return {name:n,time:new Date().toISOString(),date:today(),stat:blankDia(),mov:blankDia()};}
+/* v1.9.1: each reading set carries the date it was read. AS FOUND and FINAL
+   can be months apart (shutdown found, corrected next turnaround), so the
+   date is entered per pass and printed beside it. Older files fall back to
+   the day the pass was created. */
+function passDate(i){ var p=S.passes[i]; if(!p) return ''; return p.date||(p.time?String(p.time).slice(0,10):''); }
+function passCol(idx,C){
+ if(idx===0) return C.vi;
+ if(S.finalConfirmed&&idx===S.passes.length-1) return C.gr;
+ if(idx===1) return C.or;
+ return C===PL?'#8a6100':'#d29922';
+}
 /* ---- bar sag -----------------------------------------------------------
    ROTA.07 chapter V: the sag of the bracket is always an ADDITIVE correction,
    the full value at 180 deg and half of it at 90 and 270 deg, nothing at 0.
@@ -911,6 +961,27 @@ function dialSVG(mmVal,opts){
  return s+'</svg>';
 }
 
+/* v1.9.1: print version of the reading cross. The screen version is set in
+   a monospace face with the caption under the 180 deg value, which in the
+   report clashed with the Arial body text and ran the caption into the
+   reading. Here: report font throughout, caption on top, fixed sizes. */
+function crossRpt(d,code,title){
+ var W=250,H=142,cx=125,cy=82,arm=38,F='Arial,Helvetica,sans-serif';
+ function t(x,y,str,sz,anch,col,wt){ return '<text x="'+x+'" y="'+y+'" fill="'+(col||'#000')+'" font-size="'+sz+'" font-family="'+F+'"'+
+   (wt?' font-weight="'+wt+'"':'')+' text-anchor="'+anch+'">'+esc(str)+'</text>'; }
+ var s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
+ if(title) s+=t(cx,13,title,10,'middle','#000',700);
+ s+='<line x1="'+cx+'" y1="'+(cy-arm)+'" x2="'+cx+'" y2="'+(cy+arm)+'" stroke="#444" stroke-width="1.3"/>';
+ s+='<line x1="'+(cx-arm)+'" y1="'+cy+'" x2="'+(cx+arm)+'" y2="'+cy+'" stroke="#444" stroke-width="1.3"/>';
+ s+='<circle cx="'+cx+'" cy="'+cy+'" r="17" fill="#fff" stroke="#1257b8" stroke-width="1.3"/>';
+ s+=t(cx,cy+4,code,11,'middle','#1257b8',700);
+ /* angle labels sit against the arm tips, readings sit beyond them */
+ s+=t(cx,cy-arm-6,fD(d.T),10.5,'middle','#000',700)+t(cx+5,cy-arm+8,'0°',8,'start','#555');
+ s+=t(cx,cy+arm+14,fD(d.B),10.5,'middle','#000',700)+t(cx+5,cy+arm-2,'180°',8,'start','#555');
+ s+=t(cx+arm+6,cy+4,fD(d.R),10.5,'start','#000',700)+t(cx+arm-2,cy-5,'90°',8,'end','#555');
+ s+=t(cx-arm-6,cy+4,fD(d.L),10.5,'end','#000',700)+t(cx-arm+2,cy-5,'270°',8,'start','#555');
+ return s+'</svg>';
+}
 function crossSVG(d,code,opts){
  opts=opts||{}; var big=opts.big?1.5:1;
  var lite=opts.light;
@@ -922,14 +993,15 @@ function crossSVG(d,code,opts){
  s+='<line x1="'+(cx-arm)+'" y1="'+cy+'" x2="'+(cx+arm)+'" y2="'+cy+'" stroke="'+ln+'" stroke-width="1.6"/>';
  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(19*big)+'" fill="'+(lite?'#fff':C.bg)+'" stroke="'+ac+'" stroke-width="'+(1.4*big)+'"/>';
  s+='<text x="'+cx+'" y="'+(cy+4.5*big)+'" fill="'+ac+'" font-size="'+(12.5*big)+'" font-weight="700" font-family="ui-monospace,monospace" text-anchor="middle">'+esc(code)+'</text>';
- function v(x,y,val,anch,deg){
-  return '<text x="'+x+'" y="'+y+'" fill="'+tc+'" font-size="'+(11*big)+'" font-weight="700" font-family="ui-monospace,monospace" text-anchor="'+anch+'">'+fD(val)+'</text>'+
-         '<text x="'+x+'" y="'+(y+9*big)+'" fill="'+ln+'" font-size="'+(7*big)+'" font-family="ui-monospace,monospace" text-anchor="'+anch+'">'+deg+'</text>';
- }
- s+=v(cx,cy-arm-14,d.T,'middle','0°');
- s+=v(cx+arm+8,cy-2,d.R,'start','90°');
- s+=v(cx,cy+arm+20,d.B,'middle','180°');
- s+=v(cx-arm-8,cy-2,d.L,'end','270°');
+ /* v1.9.1: angle labels against the arm tips, readings beyond them */
+ function v(x,y,val,anch){
+  return '<text x="'+x+'" y="'+y+'" fill="'+tc+'" font-size="'+(11*big)+'" font-weight="700" font-family="ui-monospace,monospace" text-anchor="'+anch+'">'+fD(val)+'</text>'; }
+ function g(x,y,deg,anch){
+  return '<text x="'+x+'" y="'+y+'" fill="'+ln+'" font-size="'+(7.5*big)+'" font-family="ui-monospace,monospace" text-anchor="'+anch+'">'+deg+'</text>'; }
+ s+=v(cx,cy-arm-6*big,d.T,'middle')+g(cx+4*big,cy-arm+8*big,'0°','start');
+ s+=v(cx+arm+8,cy+4*big,d.R,'start')+g(cx+arm-2,cy-5*big,'90°','end');
+ s+=v(cx,cy+arm+14*big,d.B,'middle')+g(cx+4*big,cy+arm-2*big,'180°','start');
+ s+=v(cx-arm-8,cy+4*big,d.L,'end')+g(cx-arm+2,cy-5*big,'270°','start');
  if(opts.big) s+='<rect x="1" y="1" width="'+(W-2)+'" height="'+(H-2)+'" rx="8" fill="none" stroke="'+ln+'" stroke-width=".8" opacity=".45"/>';
  if(opts.title) s+='<text x="'+cx+'" y="'+(H-7)+'" fill="'+ln+'" font-size="'+(8.5*big)+'" font-family="ui-monospace,monospace" text-anchor="middle">'+esc(opts.title)+'</text>';
  return s+'</svg>';
@@ -1179,16 +1251,20 @@ function simScale(idx,axis,pw,halfH){
  var Dref=refDim(), span=Math.max(S.dim.D3*1.16, (isFR()?S.dim.gap:S.dim.D1)*1.6, 1);
  var des=SA.centreline(effPass(0),S.method,Dref);
  var act=SA.centreline(effPass(Math.min(idx,S.passes.length-1)),S.method,Dref);
+ /* v1.9.1: from the first correction on, the AS FOUND centreline is drawn
+    as well, so every figure shows where the job started */
+ var ini=(idx>1&&S.passes[1])?SA.centreline(effPass(1),S.method,Dref):null;
  var lim=tolLimits(), band=lim.offAcc||0;
  var mx=band*1.35;
  [0,S.dim.D1,S.dim.D2,S.dim.D3,span].forEach(function(x){
+  if(ini) mx=Math.max(mx, Math.abs(SA.at(ini[axis],x)));
   mx=Math.max(mx, Math.abs(SA.at(des[axis],x)), Math.abs(SA.at(act[axis],x)),
                   Math.abs(SA.at(des[axis],x))+band);
  });
  mx=mx*1.18 || 1e-4;
  var ts=halfH/mx;                                   /* px per mm transverse */
  var as=pw/span;                                    /* px per mm axial */
- return {span:span,des:des,act:act,band:band,ts:ts,as:as,exag:ts/as,mx:mx};
+ return {span:span,des:des,act:act,ini:ini,band:band,ts:ts,as:as,exag:ts/as,mx:mx};
 }
 function scaleNote(sc){
  return (LANG==='id'?'Skala aksial 1 : 1 sepanjang ':'Axial scale 1 : 1 over ')+fL(sc.span)+' '+uL()+
@@ -1258,7 +1334,12 @@ function simEq(idx,axis,light){
  /* desired and actual centrelines, drawn after the bodies so both stay visible */
  s+='<line x1="'+X(0)+'" y1="'+Y(SA.at(sc.des[axis],0))+'" x2="'+X(sc.span)+'" y2="'+Y(SA.at(sc.des[axis],sc.span))+
     '" stroke="'+C.vi+'" stroke-width="2.2" stroke-dasharray="9 5"/>';
- var col=(S.finalConfirmed&&idx===S.passes.length-1)?C.gr:C.or;
+ var col=passCol(idx,C);
+ if(sc.ini){
+  s+='<line x1="'+X(0)+'" y1="'+Y(SA.at(sc.ini[axis],0))+'" x2="'+X(sc.span)+'" y2="'+Y(SA.at(sc.ini[axis],sc.span))+
+     '" stroke="'+C.or+'" stroke-width="2" stroke-dasharray="3 3"/>';
+  [S.dim.D2,S.dim.D3].forEach(function(x){ s+='<circle cx="'+X(x)+'" cy="'+Y(SA.at(sc.ini[axis],x))+'" r="3.2" fill="'+C.or+'"/>'; });
+ }
  s+='<line x1="'+X(0)+'" y1="'+Y(SA.at(sc.act[axis],0))+'" x2="'+X(sc.span)+'" y2="'+Y(SA.at(sc.act[axis],sc.span))+
     '" stroke="'+col+'" stroke-width="2.6"/>';
  /* planes */
@@ -1299,9 +1380,14 @@ function simEq(idx,axis,light){
  });
  /* legend */
  var lx=W-mr+14, ly=64;
- [[C.vi,'DESIRED','8 5'],[col,String(passName(idx)).toUpperCase(),null]].forEach(function(n){
+ var leg=[[C.vi,'DESIRED','8 5','']];
+ if(sc.ini) leg.push([C.or,'AS FOUND','3 3',showDate(passDate(1))]);
+ leg.push([col,String(passName(idx)).toUpperCase(),null,idx>0?showDate(passDate(idx)):'']);
+ leg.forEach(function(n){
   s+='<line x1="'+lx+'" y1="'+ly+'" x2="'+(lx+24)+'" y2="'+ly+'" stroke="'+n[0]+'" stroke-width="2.6"'+(n[2]?' stroke-dasharray="'+n[2]+'"':'')+'/>';
-  s+=tx(lx+30,ly+3.5,n[1],{s:9.5,f:n[0],w:700}); ly+=18; });
+  s+=tx(lx+30,ly+3.5,n[1],{s:9.5,f:n[0],w:700});
+  if(n[3]){ s+=tx(lx+30,ly+14,n[3],{s:8,f:C.mu}); ly+=10; }
+  ly+=18; });
  if(sc.band>0){ s+='<rect x="'+lx+'" y="'+(ly-6)+'" width="24" height="10" fill="'+C.gr+'" opacity=".22"/>';
   s+=tx(lx+30,ly+3,(LANG==='id'?'toleransi ±':'tolerance ±')+fD(sc.band),{s:9.5,f:C.gr,w:700}); ly+=20; }
  s+=tx(lx,ly+12,(LANG==='id'?'VERDIKT':'VERDICT'),{s:9,f:C.mu});
@@ -1328,7 +1414,8 @@ function simLine(idx,axis,light){
  s+='<line x1="'+X(0)+'" y1="'+cy+'" x2="'+X(sc.span)+'" y2="'+cy+'" stroke="'+C.ref+'" stroke-width="1.4" stroke-dasharray="18 4 4 4"/>';
  var names=[];
  if(S.passes[0]) names.push([sc.des,C.vi,'8 5','DESIRED']);
- names.push([sc.act,(S.finalConfirmed&&idx===S.passes.length-1)?C.gr:C.or,null,String(passName(idx)).toUpperCase()]);
+ if(sc.ini) names.push([sc.ini,C.or,'3 3','AS FOUND',showDate(passDate(1))]);
+ names.push([sc.act,passCol(idx,C),null,String(passName(idx)).toUpperCase(),idx>0?showDate(passDate(idx)):'']);
  names.forEach(function(n){
   s+='<line x1="'+X(0)+'" y1="'+Y(SA.at(n[0][axis],0))+'" x2="'+X(sc.span)+'" y2="'+Y(SA.at(n[0][axis],sc.span))+
      '" stroke="'+n[1]+'" stroke-width="2.6"'+(n[2]?' stroke-dasharray="'+n[2]+'"':'')+'/>'; });
@@ -1338,7 +1425,9 @@ function simLine(idx,axis,light){
  var lx=W-mr+14, ly=64;
  names.forEach(function(n){
   s+='<line x1="'+lx+'" y1="'+ly+'" x2="'+(lx+24)+'" y2="'+ly+'" stroke="'+n[1]+'" stroke-width="2.6"'+(n[2]?' stroke-dasharray="'+n[2]+'"':'')+'/>';
-  s+=tx(lx+30,ly+3.5,n[3],{s:9.5,f:n[1],w:700}); ly+=18; });
+  s+=tx(lx+30,ly+3.5,n[3],{s:9.5,f:n[1],w:700});
+  if(n[4]){ s+=tx(lx+30,ly+14,n[4],{s:8,f:C.mu}); ly+=10; }
+  ly+=18; });
  palUI(); return s+'</svg>';
 }
 
@@ -1366,6 +1455,7 @@ function graphFig(axis,light){
  if(S.passes[0]) sets.push({l:L(effPass(0)),c:C.vi,d:'9 5',n:'DESIRED',w:2.4});
  if(S.passes[1]) sets.push({l:L(effPass(1)),c:C.or,d:null,n:'AS FOUND',w:3});
  if(S.finalConfirmed) sets.push({l:L(effPass(S.passes.length-1)),c:C.gr,d:null,n:'FINAL',w:3});
+ else if(S.passes.length>2){ var li=S.passes.length-1; sets.push({l:L(effPass(li)),c:passCol(li,C),d:null,n:String(passName(li)).toUpperCase(),w:3}); }
  var xinRaw=Math.ceil(D3i)+3;
  var nx = g.auto? Math.max(4,Math.ceil(xinRaw/g.xper)) : Math.max(4,Math.min(90,Math.round(g.nx)||Math.ceil(xinRaw/g.xper)));
  var xin=nx*g.xper;
@@ -1729,6 +1819,11 @@ function critDel(i){
  if(!confirm((LANG==='id'?'Hapus baris ':'Delete row ')+nm+' ?')) return;
  S.crit.splice(i,1); critRender(); autosaveMark();
 }
+/* v1.9.1: rows can be moved; report and Excel print them in this order */
+function critMove(i,dir){
+ var j=i+dir; if(!S.crit[i]||j<0||j>=S.crit.length) return;
+ var t=S.crit[i]; S.crit[i]=S.crit[j]; S.crit[j]=t; if($('critTable')) critRender(); autosaveMark();
+}
 function critReset(){
  if(!confirm(LANG==='id'
   ?'Kembalikan ke daftar standar? Baris tambahan dan seluruh isian critical dimension akan hilang.'
@@ -1751,7 +1846,9 @@ function critRender(){
    '<td><input data-c="'+i+'" data-f="act" type="text" inputmode="decimal" autocomplete="off" data-num="1"></td>'+
    '<td id="critAcc'+i+'">'+critPill(c)+'</td>'+
    '<td><input data-c="'+i+'" data-f="rem" autocomplete="off"></td>'+
-   '<td class="del"><button class="xbtn" data-del="'+i+'" title="'+(idL?'Hapus baris':'Delete row')+'"'+
+   '<td class="del"><button class="xbtn" data-mv="'+i+'" data-dir="-1" title="'+(idL?'Naikkan':'Move up')+'"'+(i===0?' disabled':'')+'>\u25B2</button>'+
+   '<button class="xbtn" data-mv="'+i+'" data-dir="1" title="'+(idL?'Turunkan':'Move down')+'"'+(i===S.crit.length-1?' disabled':'')+'>\u25BC</button>'+
+   '<button class="xbtn" data-del="'+i+'" title="'+(idL?'Hapus baris':'Delete row')+'"'+
      (S.crit.length<2?' disabled':'')+'>\u00d7</button></td></tr>';
  });
  $('critTable').innerHTML=h;
@@ -1772,6 +1869,8 @@ function critRender(){
    autosaveMark();
   };
  })(n[i]);}
+ $('critTable').querySelectorAll('button[data-mv]').forEach(function(e){
+  e.onclick=function(){ critMove(+e.getAttribute('data-mv'),+e.getAttribute('data-dir')); }; });
  var b=$('critTable').querySelectorAll('button[data-del]');
  for(var j=0;j<b.length;j++){(function(e){
   e.onclick=function(){ critDel(+e.getAttribute('data-del')); };
@@ -1876,12 +1975,14 @@ function pane6(){
   var sub=i===0?'target':(isFin?(LANG==='id'?'hasil final':'confirmed result')
     :(i===1?'as found':(LANG==='id'?'koreksi ke-'+(i-1):'correction '+(i-1))));
   h+='<button data-i="'+i+'" class="'+(i===ACTIVE?'on':'')+(isFin?' fin':'')+'">'+passName(i)+
-     '<span class="sub">'+sub+'</span></button>'; });
+     '<span class="sub">'+sub+(i>0&&passDate(i)?' · '+esc(showDate(passDate(i))):'')+'</span></button>'; });
  h+='<button class="btn sm" id="addPass">'+T('addpass')+'</button>';
  if(ACTIVE===S.passes.length-1&&!S.finalConfirmed) h+='<button class="btn sm ok" id="mkFinal">'+(LANG==='id'?'Jadikan FINAL':'Set as FINAL')+'</button>';
  if(ACTIVE===S.passes.length-1&&S.finalConfirmed) h+='<button class="btn sm" id="unmkFinal">'+(LANG==='id'?'Batalkan FINAL':'Unset FINAL')+'</button>';
  if(ACTIVE>1) h+='<button class="btn sm dg" id="delPass">'+T('delpass')+'</button>';
- h+='</div><div class="grid g2">';
+ h+='</div>';
+ if(ACTIVE>0) h+='<div class="grid g3" style="margin:4px 0 12px">'+dateFld((LANG==='id'?'Tanggal pembacaan ':'Reading date ')+passName(ACTIVE),'passes.'+ACTIVE+'.date')+'</div>';
+ h+='<div class="grid g2">';
  ['stat','mov'].forEach(function(w){
   h+='<div class="dset"><h4>'+esc(diaTitle(w))+'</h4><p>'+esc(diaSub(w))+'</p>'+
    '<div class="xgrid">'+
@@ -2161,14 +2262,170 @@ function kv(rows){ var h='<table class="kv">';
  return h+'</table>'; }
 function crossRow(p,light){
  return '<div style="display:flex;justify-content:space-around;align-items:flex-start;margin-top:.8mm">'+
-  '<div style="width:46mm">'+crossSVG(p.stat,crossCode('stat'),{light:light,title:diaTitle('stat')})+'</div>'+
-  '<div style="width:46mm">'+crossSVG(p.mov,crossCode('mov'),{light:light,title:diaTitle('mov')})+'</div></div>';
+  '<div style="width:50mm">'+crossRpt(p.stat,crossCode('stat'),diaTitle('stat'))+'</div>'+
+  '<div style="width:50mm">'+crossRpt(p.mov,crossCode('mov'),diaTitle('mov'))+'</div></div>';
+}
+/* v1.9.1: reading crosses as a grid, one column per pass and one row per
+   reading set. Same crosses, about 40 % less height than three stacked
+   rows, which is what lets the data, the dial table and the offset share
+   a page and keeps the simulation page whole. */
+function crossGrid(cols){
+ var w=(100/cols.length).toFixed(2)+'%';
+ var h='<table class="xgridr"><tr>'+cols.map(function(c){ return '<th style="width:'+w+'">'+c.title+'</th>'; }).join('')+'</tr>';
+ ['stat','mov'].forEach(function(k){
+  h+='<tr>'+cols.map(function(c){ var o=SA.planeOffset(c.p[k]);
+   return '<td>'+crossRpt(c.p[k],crossCode(k),diaTitle(k))+
+    '<div class="xoff">offset V '+fDs(o.v)+' &nbsp; H '+fDs(o.h)+'</div></td>'; }).join('')+'</tr>'; });
+ return h+'</table>';
 }
 function offLine(p){
  var o1=SA.planeOffset(p.stat), o2=SA.planeOffset(p.mov);
- return '<div style="display:flex;font-size:7.4pt;border-top:.5pt solid #999;padding-top:.7mm;margin-top:.5mm">'+
+ return '<div style="display:flex;font-size:7.6pt;border-top:.5pt solid #999;padding-top:.7mm;margin-top:.5mm">'+
   '<div style="flex:1"><b>'+esc(diaTitle('stat'))+'</b> &nbsp; offset V '+fDs(o1.v)+' &nbsp; H '+fDs(o1.h)+'</div>'+
   '<div style="flex:1;text-align:right"><b>'+esc(diaTitle('mov'))+'</b> &nbsp; offset V '+fDs(o2.v)+' &nbsp; H '+fDs(o2.h)+'</div></div>';
+}
+var LAND_NEXT=false;
+function ptopHTML(){
+ var d=new Date(), z=function(n){return String(n).padStart(2,'0');};
+ return '<div class="ptop"><span>Printed '+z(d.getDate())+'/'+z(d.getMonth()+1)+'/'+d.getFullYear()+' '+z(d.getHours())+':'+z(d.getMinutes())+'</span><b>'+esc(fileBase())+'</b></div>';
+}
+function sheetHTML(land,inner,n){
+ return '<div class="sheet'+(land?' land':'')+'">'+ptopHTML()+kopHTML()+'<div class="body">'+inner+'</div>'+foot(n)+'</div>';
+}
+/* measure every block at print width and fill each page up to its usable
+   height; a block taller than a page still gets a page of its own */
+function packBlocks(blocks){
+ var m=document.createElement('div');
+ m.style.cssText='position:absolute;left:-30000px;top:0;visibility:hidden;pointer-events:none';
+ document.body.appendChild(m);
+ m.innerHTML=sheetHTML(false,'<div id="mBody"></div>',1);
+ var sh=m.firstChild, body=m.querySelector('.body'), mb=m.querySelector('#mBody');
+ var probe=document.createElement('div'); probe.style.height='100mm'; m.appendChild(probe);
+ var pxmm=probe.offsetHeight/100||3.78;
+ /* usable height: page minus everything around the body, small safety margin */
+ var other=sh.offsetHeight-body.offsetHeight;
+ var avail=297*pxmm-other-4*pxmm;
+ var hs=blocks.map(function(bk){ if(bk.land) return 0;
+  mb.innerHTML='<div style="display:flow-root">'+bk.html+'</div>'; return mb.firstChild.offsetHeight; });
+ document.body.removeChild(m);
+ var pages=[], cur=null;
+ function flush(){ if(cur&&cur.idx.length) pages.push(cur); cur=null; }
+ blocks.forEach(function(bk,i){
+  if(bk.land){ flush(); pages.push({land:true,html:bk.html,idx:[i]}); return; }
+  /* signatures stay with the evaluation they close */
+  var need=hs[i]+((bk.key==='eval'&&blocks[i+1]&&blocks[i+1].key==='sig')?hs[i+1]:0);
+  if(cur&&cur.h+need>avail) flush();
+  if(!cur) cur={land:false,html:'',idx:[],h:0};
+  cur.html+=bk.html; cur.idx.push(i); cur.h+=hs[i];
+ });
+ flush();
+ return pages;
+}
+/* graphs on the landscape pages are drawn after the page is in the DOM so
+   their size in millimetres can follow the space actually left */
+function fillGraphs(root){
+ var slots=root.querySelectorAll('[data-gmm]'); if(!slots.length) return;
+ /* the preview may still be hidden when the report is first built */
+ var hid=getComputedStyle(root).display==='none'; if(hid) root.style.display='block';
+ var probe=document.createElement('div'); probe.style.cssText='position:absolute;visibility:hidden;height:100mm;width:1px';
+ document.body.appendChild(probe); var pxmm=probe.offsetHeight/100||3.78; document.body.removeChild(probe);
+ var sc=graphScaleMM();
+ slots.forEach(function(sl){
+  var sheet=sl.closest('.sheet'), body=sheet.querySelector('.body');
+  var used=sheet.offsetHeight-body.offsetHeight;                 /* top strip, kop, footer */
+  var secH=sl.closest('.sec').offsetHeight-sl.offsetHeight;       /* section heading */
+  var Hmm=Math.floor((210*pxmm-used-secH)/pxmm)-6, Wmm=Math.floor(sl.clientWidth/pxmm)||270;
+  sl.innerHTML=graphMM(sl.getAttribute('data-gmm'),Wmm,Hmm,sc);
+ });
+ if(hid) root.style.display='none';
+}
+/* ===== v1.9.1 MILLIMETRE GRAPH ==========================================
+   The report graph is drawn the way it is done by hand on millimetre block
+   paper: the SVG is sized in mm, one minor square is 1 mm, with 5 mm and
+   10 mm lines. Printed at 100 % (Actual size) the squares are true mm.
+   Both graphs use the same scales, so vertical and horizontal compare
+   directly: horizontal 1 mm = xper inch of machine length, vertical
+   1 mm = yper mil of offset.                                              */
+function graphSets(axis){
+ var Dref=refDim(), out=[];
+ function L(p){ var l=SA.centreline(p,S.method,Dref)[axis]; return {a:l.a/SA.MIL_MM, b:l.b*IN/SA.MIL_MM}; }
+ if(S.passes[0]) out.push({l:L(effPass(0)),c:'#6f42c1',d:'2.2 1.4',n:'DESIRED',w:.45,dt:''});
+ if(S.passes[1]) out.push({l:L(effPass(1)),c:'#b35309',d:null,n:'AS FOUND',w:.5,dt:showDate(passDate(1))});
+ var li=S.passes.length-1;
+ if(S.finalConfirmed&&li>=1) out.push({l:L(effPass(li)),c:'#0a6b21',d:null,n:'FINAL',w:.55,dt:showDate(passDate(li))});
+ else if(li>1) out.push({l:L(effPass(li)),c:'#8a6100',d:null,n:String(passName(li)).toUpperCase(),w:.55,dt:showDate(passDate(li))});
+ return out;
+}
+function graphScaleMM(){
+ var D3i=SA.mm2l(S.dim.D3,'imp'), xin=D3i*1.06+2;
+ var gw=297-18-14-60-6;                      /* page width minus margins, axis labels, side panel */
+ var xper=[0.25,0.5,1,2,2.5,5,10,20].filter(function(v){ return xin/v<=gw; })[0]||20;
+ var lo=0,hi=0; ['v','h'].forEach(function(ax){ graphSets(ax).forEach(function(q){
+  [0,xin].forEach(function(x){ var y=q.l.a+q.l.b*x; lo=Math.min(lo,y); hi=Math.max(hi,y); }); }); });
+ var gh=110;                                 /* conservative grid height for the scale choice */
+ var rng=Math.max(4,(hi-lo)*1.15);
+ var yper=[0.1,0.2,0.25,0.5,1,2,2.5,5,10,20].filter(function(v){ return rng/v<=gh; })[0]||20;
+ return {xper:xper,yper:yper,xin:xin};
+}
+function graphMM(axis,W,H,sc){
+ var F='Arial,Helvetica,sans-serif', ml=13, mr=62, mt=9, mb=11;
+ var gw=W-ml-mr, gh=H-mt-mb;
+ var nx=Math.floor(gw), ny=Math.floor(gh);
+ var sets=graphSets(axis);
+ var lo=0,hi=0; sets.forEach(function(q){ [0,nx*sc.xper].forEach(function(x){ var y=q.l.a+q.l.b*x; lo=Math.min(lo,y); hi=Math.max(hi,y); }); });
+ var need=(hi-lo)/sc.yper, top=Math.round(hi/sc.yper+(ny-need)/2);   /* rows above the datum */
+ top=Math.max(Math.ceil(hi/sc.yper)+2,Math.min(top,ny-Math.ceil(-lo/sc.yper)-2));
+ var X=function(xin){ return ml+xin/sc.xper; }, Y=function(mil){ return mt+(top-mil/sc.yper); };
+ var D1i=SA.mm2l(isFR()?S.dim.gap:S.dim.D1,'imp'), D2i=SA.mm2l(S.dim.D2,'imp'), D3i=SA.mm2l(S.dim.D3,'imp');
+ function t(x,y,str,sz,anch,col,wt,rot){ return '<text x="'+x+'" y="'+y+'" font-family="'+F+'" font-size="'+sz+'" fill="'+(col||'#000')+'"'+
+   (wt?' font-weight="'+wt+'"':'')+' text-anchor="'+(anch||'start')+'"'+(rot?' transform="rotate(-90 '+x+' '+y+')"':'')+'>'+esc(str)+'</text>'; }
+ var s='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'mm" height="'+H+'mm" viewBox="0 0 '+W+' '+H+'" style="display:block">';
+ /* millimetre block paper */
+ var gx0=ml, gy0=mt, gx1=ml+nx, gy1=mt+ny;
+ s+='<rect x="'+gx0+'" y="'+gy0+'" width="'+nx+'" height="'+ny+'" fill="#fffdf7"/>';
+ for(var i=0;i<=nx;i++){ var k=i%10===0?2:(i%5===0?1:0);
+  s+='<line x1="'+(gx0+i)+'" y1="'+gy0+'" x2="'+(gx0+i)+'" y2="'+gy1+'" stroke="'+['#f2c9a8','#e59a62','#c8611d'][k]+'" stroke-width="'+[.06,.12,.22][k]+'"/>'; }
+ for(var j=0;j<=ny;j++){ var r=j-top, k2=r%10===0?2:(r%5===0?1:0);
+  s+='<line x1="'+gx0+'" y1="'+(gy0+j)+'" x2="'+gx1+'" y2="'+(gy0+j)+'" stroke="'+['#f2c9a8','#e59a62','#c8611d'][k2]+'" stroke-width="'+[.06,.12,.22][k2]+'"/>'; }
+ s+='<rect x="'+gx0+'" y="'+gy0+'" width="'+nx+'" height="'+ny+'" fill="none" stroke="#000" stroke-width=".3"/>';
+ /* axis numbers every 10 mm */
+ for(var i2=0;i2<=nx;i2+=10) s+=t(gx0+i2,gy1+3.6,+(i2*sc.xper).toFixed(2),2.5,'middle','#000');
+ for(var j2=0;j2<=ny;j2++){ var rr=top-j2; if(rr%10===0) s+=t(gx0-1.2,gy0+j2+.9,+(rr*sc.yper).toFixed(2),2.5,'end','#000'); }
+ s+=t(gx0+nx/2,H-1.6,'axial distance from the stationary indicator plane, inch',2.7,'middle','#000');
+ s+=t(4,gy0+ny/2,(axis==='v'?'vertical offset, mil   (+ = UP)':'horizontal offset, mil   (+ = LEFT)'),2.7,'middle','#000',null,1);
+ /* coupling band and stations */
+ s+='<rect x="'+X(0)+'" y="'+gy0+'" width="'+(X(D1i)-X(0))+'" height="'+ny+'" fill="#0a6b21" opacity=".07"/>';
+ [[0,'P1','#0a6b21'],[D1i,'P2','#0a6b21'],[D2i,'I/B','#1257b8'],[D3i,'O/B','#1257b8']].forEach(function(q){
+  if(X(q[0])>gx1) return;
+  s+='<line x1="'+X(q[0])+'" y1="'+(gy0-2)+'" x2="'+X(q[0])+'" y2="'+gy1+'" stroke="'+q[2]+'" stroke-width=".3" stroke-dasharray="1.6 1"/>';
+  s+=t(X(q[0]),gy0-2.8,q[1],2.8,'middle',q[2],700); });
+ if(axis==='h'){ s+=t(gx1-1,gy0+3.4,'LEFT',2.6,'end','#6f42c1',700); s+=t(gx1-1,gy1-1.4,'RIGHT',2.6,'end','#6f42c1',700); }
+ /* datum and centrelines */
+ s+='<line x1="'+gx0+'" y1="'+Y(0)+'" x2="'+gx1+'" y2="'+Y(0)+'" stroke="#000" stroke-width=".5" stroke-dasharray="4 .8 .8 .8"/>';
+ var xe=nx*sc.xper;
+ sets.forEach(function(q){
+  s+='<line x1="'+X(0)+'" y1="'+Y(q.l.a)+'" x2="'+X(xe)+'" y2="'+Y(q.l.a+q.l.b*xe)+'" stroke="'+q.c+'" stroke-width="'+q.w+'"'+(q.d?' stroke-dasharray="'+q.d+'"':'')+' stroke-linecap="round"/>';
+  [D2i,D3i].forEach(function(x){ if(X(x)<=gx1) s+='<circle cx="'+X(x)+'" cy="'+Y(q.l.a+q.l.b*x)+'" r=".8" fill="'+q.c+'"/>'; }); });
+ /* side panel: scale, legend, correction */
+ var px=gx1+5, py=gy0+2;
+ s+=t(px,py,'SCALE',2.8,'start','#000',700); py+=4.2;
+ s+=t(px,py,'1 mm = '+sc.xper+' inch (length)',2.6); py+=3.6;
+ s+=t(px,py,'1 mm = '+sc.yper+' mil (offset)',2.6); py+=3.6;
+ s+=t(px,py,'same scale on both graphs',2.3,'start','#555'); py+=3.4;
+ s+=t(px,py,'print at 100 % / actual size',2.3,'start','#555'); py+=6;
+ sets.forEach(function(q){
+  s+='<line x1="'+px+'" y1="'+(py-.9)+'" x2="'+(px+8)+'" y2="'+(py-.9)+'" stroke="'+q.c+'" stroke-width="'+(q.w+.2)+'"'+(q.d?' stroke-dasharray="'+q.d+'"':'')+'/>';
+  s+=t(px+10,py,q.n,2.7,'start',q.c,700)+(q.dt?t(px+10,py+3.2,q.dt,2.3,'start','#555'):''); py+=q.dt?7.4:4.6; });
+ s+='<line x1="'+px+'" y1="'+(py-.9)+'" x2="'+(px+8)+'" y2="'+(py-.9)+'" stroke="#000" stroke-width=".5" stroke-dasharray="4 .8 .8 .8"/>';
+ s+=t(px+10,py,'STATIONARY datum',2.7,'start','#000',700); py+=8;
+ var r=compute(), mv=axis==='v'?[r.move.ibV,r.move.obV]:[r.move.ibH,r.move.obH];
+ s+=t(px,py,'CORRECTION ('+String(passName(S.passes.length-1)).toUpperCase()+')',2.8,'start','#000',700); py+=4.4;
+ ['I/B','O/B'].forEach(function(tag,k){ var v=mv[k], a=Math.abs(v/SA.MIL_MM);
+  var w=a<0.05?'ON TARGET':(axis==='v'?(v>0?'ADD SHIM (UP) ':'REMOVE SHIM (DOWN) '):(v>0?'PUSH LEFT ':'PUSH RIGHT '))+(a<0.05?'':a.toFixed(1)+' mil');
+  s+=t(px,py,tag+'  '+w,2.6); py+=3.6;
+  var alt=axis==='h'?hAltEn(v):''; if(alt){ s+=t(px+6,py,alt,2.2,'start','#555'); py+=3.4; } });
+ if(axis==='h'){ py+=2; s+=t(px,py,'left / right seen from behind the',2.3,'start','#555'); py+=3; s+=t(px,py,driverName().toUpperCase(),2.3,'start','#555'); }
+ return s+'</svg>';
 }
 function buildReport(){
  var r=compute(), lim=r.lim, sf=SA.softFoot(S.sf.r,S.sf.limit);
@@ -2178,22 +2435,30 @@ function buildReport(){
     collected page by page; a page left empty is dropped, the remaining
     sections are renumbered 1, 2, 3 ... and the page count follows. */
  var phSel=S.photos.filter(function(p){ return !p.noRpt; });
- var phPages=rptOff('photo')?0:Math.ceil(phSel.length/4);
- var pg=0, h='', pages=[], cur='', num=0, lastKey='', lastNum=0;
- function sheet(){ cur=''; return ''; }
- function endPage(){ if(cur) pages.push(cur); cur=''; return ''; }
+ var phRows=rptOff('photo')?0:Math.ceil(phSel.length/2);
+ var pg=0, h='', pages=[], cur='', num=0, lastKey='', lastNum=0, blocks=[];
+ RPT_MAP={};
+ /* v1.9.1: sections are collected as blocks and then packed onto pages by
+    their measured height, so a short section no longer leaves the rest of
+    a page empty. The two line graphs get a landscape page each. */
+ function sheet(){ return ''; }
+ function endPage(){ return ''; }
  function S_(key,title,inner){
   if(rptOff(key)) return '';
   var t=String(title).replace(/^\d+b?\.\s*/,''), lab;
   if(key===lastKey) lab=String(lastNum);
   else if(key==='raw'&&lastKey==='data') lab=lastNum+'b';
   else { num++; lab=String(num); lastNum=num; }
-  lastKey=key; cur+=sec(lab+'. '+t,inner); return '';
+  lastKey=key; if(!RPT_MAP[key]) RPT_MAP[key]={num:lab,block:blocks.length};
+  blocks.push({key:key,html:sec(lab+'. '+t,inner),land:!!LAND_NEXT}); LAND_NEXT=false; return '';
  }
 
  h+=sheet();
- h+=S_('job','1. Job description', kv([['Equipment / Tag No.',S.job.tag],['Work Order (MWO)',S.job.mwo],
-   ['Job description',S.job.desc],['Date',S.job.date],['Alignment performer',S.job.performer]]));
+ var jrows=[['Equipment / Tag No.',S.job.tag],['Work Order (MWO)',S.job.mwo],
+   ['Job description',S.job.desc],['Date',showDate(S.job.date)],['Alignment performer',S.job.performer]];
+ if(S.passes.length>1){ jrows.push(['As found read',showDate(passDate(1))]);
+  if(S.passes.length>2) jrows.push([S.finalConfirmed?'Final read':'Latest reading',showDate(passDate(S.passes.length-1))]); }
+ h+=S_('job','1. Job description', kv(jrows));
  h+=S_('setting','2. Alignment setting', kv([['Driver',driverName()],['Driven',drivenName()],
    ['Movable',movName()],['Stationary',statName()],
    ['Alignment method',methodName()+(isFR()?' (RIM + FACE, one bracket)':' (RIM + RIM, two planes)')],
@@ -2203,7 +2468,7 @@ function buildReport(){
    ['Dimension', dimLabels().map(function(q,k){
       var vals=isFR()?[S.dim.H,S.dim.D2,S.dim.D3,S.dim.gap]:[S.dim.D1,S.dim.D2,S.dim.D3];
       return q[0]+' = '+fL(vals[k])+' '+uL(); }).join(' &nbsp; ')+
-     ' &nbsp;<i>('+dimLabels().map(function(q){return q[0]+' '+q[1];}).join('; ')+')</i>',true]]));
+     '<br><span style="font-size:7.2pt;color:#333"><i>'+dimLabels().map(function(q){return q[0]+' '+q[1];}).join('; ')+'</i></span>',true]]));
  h+=S_('spec','3. Specification',
   '<table class="rt"><tr><th style="width:26mm">Item</th><th>DRIVER : '+driverName().toUpperCase()+'</th><th>DRIVEN : '+drivenName().toUpperCase()+'</th></tr>'+
   '<tr><td>Manufacturer</td><td>'+esc(S.mach.drvMfr)+'</td><td>'+esc(S.mach.dvnMfr)+'</td></tr>'+
@@ -2240,21 +2505,22 @@ function buildReport(){
 
  h+=sheet();
  h+=S_('data','7. Alignment data — '+methodName()+', left / right viewed from behind the '+viewMachine().toUpperCase(),
-  '<div style="font-size:7.4pt;margin-bottom:1mm">Readings placed at 0°, 90°, 180° and 270°. Centre code is bracket location / dial location. Plane offset = (180° &minus; 0°)/2 vertical and (90° &minus; 270°)/2 horizontal. Validity 0°+180° = 90°+270°.'+
-  (S.sag>0?' The diagrams show the readings after a bar sag correction of '+fD(S.sag)+' '+uD()+
-   ' (180° + sag, 90° and 270° + &frac12; sag, DESIRED not corrected). Field readings as taken are listed in 7b.':'')+'</div>'+
-  '<div style="border-bottom:.5pt solid #999;padding-bottom:.8mm;margin-bottom:.8mm"><b style="font-size:8pt">DESIRED</b>'+crossRow(des,true)+offLine(des)+'</div>'+
-  '<div style="border-bottom:.5pt solid #999;padding-bottom:.8mm;margin-bottom:.8mm"><b style="font-size:8pt">AS FOUND (INITIAL)</b>'+crossRow(ini,true)+offLine(ini)+'</div>'+
-  '<div><b style="font-size:8pt">FINAL</b>'+crossRow(fin,true)+offLine(fin)+'</div>');
+  '<div style="font-size:7.2pt;margin-bottom:.8mm">Centre code = bracket / dial location. Plane offset (180° &minus; 0°)/2 vertical, (90° &minus; 270°)/2 horizontal. Validity 0°+180° = 90°+270°.</div>'+
+  (S.sag>0
+   ?'<div class="sagbox"><b>BAR SAG CORRECTION &nbsp;'+fD(S.sag)+' '+uD()+'</b><span>Applied to every pass except DESIRED: 180° + sag, 90° and 270° + &frac12; sag, 0° unchanged. Crosses below are corrected; the table that follows lists the readings as taken.</span></div>'
+   :'<div class="sagbox zero"><b>BAR SAG &nbsp;0 '+uD()+'</b><span>No bar sag correction applied.</span></div>')+
+  crossGrid([{title:'DESIRED',p:des},
+   {title:'AS FOUND (INITIAL)'+(passDate(1)?'<span> &nbsp;read '+esc(showDate(passDate(1)))+'</span>':''),p:ini}]
+   .concat((S.passes.length>2||S.finalConfirmed)?[{title:(S.finalConfirmed?'FINAL':esc(String(passName(S.passes.length-1)).toUpperCase())+' (latest)')+
+     (passDate(S.passes.length-1)?'<span> &nbsp;read '+esc(showDate(passDate(S.passes.length-1)))+'</span>':''),p:fin}]:[])));
  if(S.passes.length>=2){
-  var pt='<table class="rt"><tr><th>Pass</th><th colspan="4">'+esc(diaTitle('stat'))+'</th><th colspan="4">'+esc(diaTitle('mov'))+'</th></tr>'+
-   '<tr><th></th><th>0°</th><th>270°</th><th>90°</th><th>180°</th><th>0°</th><th>270°</th><th>90°</th><th>180°</th></tr>';
-  S.passes.forEach(function(p,k){ pt+='<tr><td>'+passName(k)+'</td>'+
+  var pt='<table class="rt cmp"><tr><th>Pass</th><th>Date read</th><th colspan="4">'+esc(diaTitle('stat'))+'</th><th colspan="4">'+esc(diaTitle('mov'))+'</th></tr>'+
+   '<tr><th></th><th></th><th>0°</th><th>270°</th><th>90°</th><th>180°</th><th>0°</th><th>270°</th><th>90°</th><th>180°</th></tr>';
+  S.passes.forEach(function(p,k){ pt+='<tr><td>'+passName(k)+'</td><td class="c">'+(k>0?esc(showDate(passDate(k))):'-')+'</td>'+
    ['T','L','R','B'].map(function(q){return '<td class="n">'+fD(p.stat[q])+'</td>';}).join('')+
    ['T','L','R','B'].map(function(q){return '<td class="n">'+fD(p.mov[q])+'</td>';}).join('')+'</tr>'; });
   h+=S_('raw','7b. Dial readings as taken ('+uD()+')', pt+'</table>'+
-   '<div style="font-size:7.2pt;margin-top:.8mm">Bar sag '+fD(S.sag)+' '+uD()+
-   (S.sag>0?' is applied to every pass except DESIRED before the offsets are computed.':' — no correction applied.')+'</div>');
+   '<div style="font-size:7.2pt;margin-top:.8mm">'+(S.sag>0?'Values as read on the dial, before the bar sag correction of '+fD(S.sag)+' '+uD()+'.':'Values as read on the dial.')+'</div>');
  }
  h+=endPage();
 
@@ -2291,6 +2557,7 @@ function buildReport(){
 
  h+=sheet(); pal(true);
  h+=S_('sim','10. Alignment simulation — equipment position',
+  /* both frames stay on one page so vertical and horizontal read together */
   '<div style="text-align:center">'+simEq(S.passes.length-1,'v',true)+'</div>'+
   '<div style="text-align:center;margin-top:1.5mm">'+simEq(S.passes.length-1,'h',true)+'</div>'+
   '<div style="font-size:7.2pt;margin-top:1mm">The axial scale is 1:1. The transverse scale is magnified by the factor printed on each frame, and the shaded band is the tolerance envelope about the desired centreline, so a centreline inside the band is inside tolerance.</div>');
@@ -2298,23 +2565,19 @@ function buildReport(){
  h+=endPage();
 
  h+=sheet(); pal(true);
- h+=S_('graph','11. Alignment line graph',
-  '<div style="text-align:center">'+graphFig('v',true)+'</div>'+
-  '<div style="text-align:center;margin-top:1.5mm">'+graphFig('h',true)+'</div>'+
-  '<div style="font-size:7.2pt;margin-top:1mm">Manual graphing convention (ROTA.08): vertical plus = up, horizontal plus = left seen from behind the driver. Horizontal and vertical grid scales are printed on each frame. Heavy dash-dot line is the stationary shaft centreline taken as datum, the shaded band is the coupling. Purple dashed = desired, orange = as found, green = final.</div>');
+ LAND_NEXT=true; h+=S_('graph','11. Alignment line graph — vertical (side view)','<div data-gmm="v"></div>');
+ LAND_NEXT=true; h+=S_('graph','11. Alignment line graph — horizontal (top view, LEFT up)','<div data-gmm="h"></div>');
  pal(false); palUI();
  h+=endPage();
 
- for(var pi=0;pi<phPages;pi++){
-  h+=sheet();
-  var sl=phSel.slice(pi*4,pi*4+4);
+ for(var pi=0;pi<phRows;pi++){
+  var sl=phSel.slice(pi*2,pi*2+2);
   function cellp(p,k){ return '<td style="width:50%;border:0;padding:1mm;text-align:center"><img src="'+p.d+
     '" style="width:100%;max-height:76mm;object-fit:contain;border:.6pt solid #555"><div style="font-size:7.4pt;margin-top:.6mm">'+
-    (pi*4+k+1)+'. '+esc(p.cap||'')+'</div></td>'; }
-  h+=S_('photo','12. Photographic evidence'+(phPages>1?' ('+(pi+1)+'/'+phPages+')':''),
-   '<table class="rt" style="border:0"><tr>'+sl.slice(0,2).map(function(p,k){return cellp(p,k);}).join('')+'</tr>'+
-   (sl.length>2?'<tr>'+sl.slice(2,4).map(function(p,k){return cellp(p,k+2);}).join('')+'</tr>':'')+'</table>');
-  h+=endPage();
+    (pi*2+k+1)+'. '+esc(p.cap||'')+'</div></td>'; }
+  var tb='<table class="rt" style="border:0"><tr>'+sl.map(function(p,k){return cellp(p,k);}).join('')+(sl.length<2?'<td style="border:0"></td>':'')+'</tr></table>';
+  if(pi===0) h+=S_('photo','12. Photographic evidence',tb);
+  else blocks.push({key:'photo',html:'<div class="sec"><div class="in">'+tb+'</div></div>',land:false});
  }
 
  h+=sheet();
@@ -2322,46 +2585,86 @@ function buildReport(){
   '<table class="rt"><tr><th style="width:50%">Evaluation &amp; analysis</th><th>Recommendation</th></tr>'+
   '<tr><td style="height:26mm;vertical-align:top">'+esc(S.ev.analysis).replace(/\n/g,'<br>')+'</td>'+
   '<td style="vertical-align:top">'+esc(S.ev.recommendation).replace(/\n/g,'<br>')+'</td></tr></table>');
- if(!rptOff('sig')) cur+='<div class="sig"><table><tr><th style="width:32mm">Description</th><th>Name</th><th style="width:46mm">Title</th><th style="width:34mm">Signature</th><th style="width:24mm">Date</th></tr>'+
-  [['PERFORMED BY',S.sign.prepName,S.sign.prepTitle],['REVIEWED BY',S.sign.chkName,S.sign.chkTitle],
-   ['APPROVED BY',S.sign.appName,S.sign.appTitle]].map(function(d){
+ if(!rptOff('sig')) RPT_MAP.sig={num:'',block:blocks.length};
+ if(!rptOff('sig')) blocks.push({key:'sig',land:false,html:'<div class="sig"><table><tr><th style="width:32mm">Description</th><th>Name</th><th style="width:46mm">Title</th><th style="width:34mm">Signature</th><th style="width:24mm">Date</th></tr>'+
+  signRows().map(function(d){
    return '<tr><td>'+d[0]+'</td><td>'+esc(d[1]||'')+'</td><td>'+esc(d[2]||'')+'</td><td class="sp"></td><td></td></tr>'; }).join('')+
-  '</table></div>';
+  '</table></div>'});
  h+=endPage();
+ pages=packBlocks(blocks);
  RPTN=pages.length;
- h=pages.map(function(c,i){ return '<div class="sheet">'+kopHTML()+c+foot(i+1)+'</div>'; }).join('');
- if(!pages.length) h='<div class="sheet">'+kopHTML()+'</div>';
+ Object.keys(RPT_MAP).forEach(function(k){ var bi=RPT_MAP[k].block;
+  for(var i=0;i<pages.length;i++) if(pages[i].idx.indexOf(bi)>=0){ RPT_MAP[k].page=i+1; break; } });
+ if($('rptBox')&&!RPT_BUSY) rptBind();
+ h=pages.map(function(pgx,i){ return sheetHTML(pgx.land,pgx.html,i+1); }).join('');
+ if(!pages.length) h=sheetHTML(false,'',1);
  $('rep').innerHTML=h;
+ fillGraphs($('rep'));
  return pages.length;
 }
+/* v1.9.1: approval block can take extra signers (witness, operation
+   representative, contractor, ...) under any role name. */
+function signRows(){
+ var g=S.sign||{};
+ var rows=[['PERFORMED BY',g.prepName,g.prepTitle],['REVIEWED BY',g.chkName,g.chkTitle],['APPROVED BY',g.appName,g.appTitle]];
+ (g.extra||[]).forEach(function(x){ rows.push([String(x.role||'').toUpperCase()||'-',x.name,x.title]); });
+ return rows;
+}
+var signTimer=null;
+function signRender(){
+ var w=$('signExtra'); if(!w) return; var id=LANG==='id';
+ if(!S.sign.extra) S.sign.extra=[];
+ w.innerHTML=S.sign.extra.map(function(x,i){
+  return '<div class="grid g3 sgx">'+
+   '<div class="f"><label><b>'+(id?'Peran':'Role')+'</b></label><input data-sx="'+i+'" data-f="role" autocomplete="off" placeholder="'+(id?'mis. WITNESSED BY':'e.g. WITNESSED BY')+'"></div>'+
+   '<div class="f"><label><b>'+(id?'Nama':'Name')+'</b></label><input data-sx="'+i+'" data-f="name" autocomplete="off"></div>'+
+   '<div class="f"><label><b>'+(id?'Jabatan':'Title')+'</b></label><div class="dwrap"><input data-sx="'+i+'" data-f="title" autocomplete="off">'+
+   '<button type="button" class="xbtn" data-sxdel="'+i+'" title="'+(id?'Hapus':'Remove')+'">\u00d7</button></div></div></div>'; }).join('');
+ w.querySelectorAll('[data-sx]').forEach(function(e){
+  var x=S.sign.extra[+e.getAttribute('data-sx')], f=e.getAttribute('data-f'); e.value=x[f]||'';
+  e.oninput=function(){ x[f]=this.value; clearTimeout(signTimer); signTimer=setTimeout(buildReport,400); }; });
+ w.querySelectorAll('[data-sxdel]').forEach(function(e){ e.onclick=function(){
+  S.sign.extra.splice(+e.getAttribute('data-sxdel'),1); signRender(); buildReport(); autosaveMark(); }; });
+}
+function signAdd(){ if(!S.sign.extra) S.sign.extra=[]; S.sign.extra.push({role:'',name:'',title:''}); signRender(); buildReport(); autosaveMark();
+ var n=$('signExtra').querySelectorAll('input[data-f="role"]'); if(n.length) n[n.length-1].focus(); }
 function rptOff(k){ return !!(S.rpt&&S.rpt.off&&S.rpt.off[k]); }
-var RPT_ITEMS=[['job','Deskripsi pekerjaan','Job description'],['setting','Setting alignment','Alignment setting'],
- ['spec','Spesifikasi mesin','Specification'],['crit','Critical dimension','Critical dimension'],
- ['sf','Soft foot','Soft foot'],['dim','Dimensi mesin','Machine dimension'],
- ['data','Data alignment','Alignment data'],['raw','Bacaan dial (tabel)','Dial readings table'],
- ['offset','Offset & hasil alignment','Offset & result'],['corr','Koreksi kaki','Foot correction'],
- ['sim','Simulasi posisi','Position simulation'],['graph','Grafik alignment','Alignment graph'],
- ['photo','Foto','Photos'],['eval','Evaluasi & rekomendasi','Evaluation & recommendation'],['sig','Tanda tangan','Signatures']];
+var RPT_ITEMS=[['job','Data pekerjaan','Job data','Job description'],['setting','Setting alignment','Alignment setting','Alignment setting'],
+ ['spec','Spesifikasi mesin','Machine specification','Specification'],['crit','Critical dimension','Critical dimension','Critical dimension'],
+ ['sf','Soft foot','Soft foot','Soft foot record'],['dim','Gambar dimensi mesin','Machine dimension drawing','Machine dimension'],
+ ['data','Salib pembacaan DESIRED, AS FOUND, FINAL','Reading crosses','Alignment data'],['raw','Tabel bacaan dial semua pass','Dial readings, all passes','Dial readings as taken'],
+ ['offset','Offset terhadap desired dan hasil','Offset and result','Alignment offset'],['corr','Koreksi kaki movable','Movable foot correction','Correction required'],
+ ['sim','Simulasi posisi alat','Equipment position simulation','Alignment simulation'],['graph','Grafik kertas milimeter, 2 halaman landscape','Millimetre graphs, 2 landscape pages','Alignment line graph'],
+ ['photo','Dokumentasi foto','Photographs','Photographic evidence'],['eval','Evaluasi dan rekomendasi','Evaluation and recommendation','Evaluation and recommendation'],
+ ['sig','Kolom tanda tangan','Signature block','Signatures']];
+var RPT_MAP={};
 function rptPick(){
- var id=LANG==='id', h='<div class="rptpick">';
+ var id=LANG==='id', m=RPT_MAP||{}, h='<div class="rptlist">';
  RPT_ITEMS.forEach(function(q){
-  h+='<label><input type="checkbox" data-rpt="'+q[0]+'"'+(rptOff(q[0])?'':' checked')+'> '+esc(id?q[1]:q[2])+'</label>'; });
+  var on=!rptOff(q[0]), info=m[q[0]];
+  var tag=on&&info?(info.num?info.num:'\u2713'):'\u2014';
+  var where=on&&info?(id?'hal. ':'p. ')+info.page:(on?(id?'tidak ada data':'no data'):(id?'tidak dicetak':'not printed'));
+  h+='<label class="rptrow'+(on?'':' off')+'"><span class="no">'+tag+'</span>'+
+   '<span class="tt"><b>'+esc(q[3])+'</b><small>'+esc(id?q[1]:q[2])+'</small></span>'+
+   '<span class="pg">'+where+'</span>'+
+   '<span class="sw"><input type="checkbox" data-rpt="'+q[0]+'"'+(on?' checked':'')+'><i></i></span></label>'; });
  h+='</div>';
  if(S.photos.length&&!rptOff('photo')){
   h+='<div class="rptph">'+S.photos.map(function(p,i){
-   return '<label><img src="'+p.d+'" alt=""><span><input type="checkbox" data-rph="'+i+'"'+(p.noRpt?'':' checked')+'> '+
+   return '<label class="'+(p.noRpt?'off':'')+'"><img src="'+p.d+'" alt=""><span><input type="checkbox" data-rph="'+i+'"'+(p.noRpt?'':' checked')+'> '+
     (i+1)+(p.cap?'. '+esc(p.cap):'')+'</span></label>'; }).join('')+'</div>';
  }
  return h;
 }
+var RPT_BUSY=false;
 function rptBind(){
  var w=$('rptBox'); if(!w) return;
- w.innerHTML=rptPick();
+ RPT_BUSY=true; var sc=w.scrollTop; w.innerHTML=rptPick(); w.scrollTop=sc; RPT_BUSY=false;
  w.onchange=function(e){ var t=e.target;
-  if(t.getAttribute('data-rpt')){ S.rpt.off[t.getAttribute('data-rpt')]=!t.checked; if(t.getAttribute('data-rpt')==='photo') rptBind(); }
+  if(t.getAttribute('data-rpt')){ S.rpt.off[t.getAttribute('data-rpt')]=!t.checked; }
   else if(t.getAttribute('data-rph')){ var p=S.photos[+t.getAttribute('data-rph')]; if(p){ if(t.checked) delete p.noRpt; else p.noRpt=true; } }
   buildReport(); };
- var all=$('rptAll'); if(all) all.onclick=function(){ S.rpt.off={}; S.photos.forEach(function(p){ delete p.noRpt; }); rptBind(); buildReport(); autosaveMark(); };
+ var all=$('rptAll'); if(all) all.onclick=function(){ S.rpt.off={}; S.photos.forEach(function(p){ delete p.noRpt; }); buildReport(); autosaveMark(); };
 }
 function printReport(){
  buildReport();
@@ -2370,7 +2673,7 @@ function printReport(){
  setTimeout(function(){ document.title=old; },800);
 }
 function pane8(){
- setTimeout(function(){ rptBind(); buildReport(); $('rep').style.display='block'; },0);
+ setTimeout(function(){ signRender(); buildReport(); $('rep').style.display='block'; },0);
  return '<div class="card noprint"><h3>'+(LANG==='id'?'Pengesahan':'Approval')+'</h3><div class="cb"><div class="grid g2">'+
   fld(LANG==='id'?'Performed by — nama':'Performed by — name','sign.prepName','txt')+
   fld(LANG==='id'?'Performed by — jabatan':'Performed by — title','sign.prepTitle','txt')+
@@ -2378,7 +2681,8 @@ function pane8(){
   fld(LANG==='id'?'Reviewed by — jabatan':'Reviewed by — title','sign.chkTitle','txt')+
   fld(LANG==='id'?'Approved by — nama':'Approved by — name','sign.appName','txt')+
   fld(LANG==='id'?'Approved by — jabatan':'Approved by — title','sign.appTitle','txt')+
- '</div></div></div>'+
+ '</div><div id="signExtra"></div>'+
+ '<button class="btn sm" style="margin-top:10px" onclick="signAdd()">+ '+(LANG==='id'?'Tambah penanda tangan':'Add signer')+'</button></div></div>'+
  '<div class="card noprint"><h3>'+T('s8')+'</h3><div class="cb"><div class="row">'+
   '<button class="btn p" onclick="printReport()">'+T('print')+'</button>'+
   '<button class="btn ok" onclick="exportXlsx()">'+(LANG==='id'?'Simpan sebagai Excel':'Save as Excel')+'</button>'+
@@ -2476,7 +2780,7 @@ function mergePhotos(rec,local){
  var have={}, n=0;
  rec.S.photos.forEach(function(p){ have[photoKey(p)]=1; });
  (local||[]).forEach(function(p){ if(!p||!p.d) return; var k=photoKey(p); if(have[k]) return;
-  have[k]=1; rec.S.photos.push({d:p.d,cap:p.cap||'',t:p.t||''}); n++; });
+  have[k]=1; var q={d:p.d,cap:p.cap||'',t:p.t||''}; if(p.noRpt) q.noRpt=true; rec.S.photos.push(q); n++; });
  return n;
 }
 /* photos this tablet still holds for the job id carried by rec */
@@ -2626,6 +2930,7 @@ function migrate(rec){
  if(!d.sign) d.sign={prepName:d.job.prepared||'',prepTitle:d.job.preparedTitle||'',
    chkName:d.job.checked||'',chkTitle:d.job.checkedTitle||'',
    appName:d.job.approved||'',appTitle:d.job.approvedTitle||''};
+ if(!Array.isArray(d.sign.extra)) d.sign.extra=[];
  if(!d.method) d.method=rec.method||'rev';
  d.view='driver';
  if(!d.mach) d.mach=JSON.parse(JSON.stringify(S.mach));
@@ -2652,7 +2957,7 @@ function migrate(rec){
  if(!d.passes||!d.passes.length) d.passes=[newPass('desired'),newPass('initial')];
  d.passes=d.passes.map(function(p){
   var z=function(o){o=o||{};return {T:+o.T||0,L:+o.L||0,R:+o.R||0,B:+o.B||0};};
-  return {name:p.name||'pass',time:p.time||'',stat:z(p.stat),mov:z(p.mov)}; });
+  return {name:p.name||'pass',time:p.time||'',date:p.date||(p.time?String(p.time).slice(0,10):''),stat:z(p.stat),mov:z(p.mov)}; });
  /* jobs saved by the old build marked FINAL by writing name:'final' into the
     last pass; carry that over as the new confirmed flag so old files still
     show FINAL instead of silently reverting to a numbered pass. */
@@ -2974,7 +3279,7 @@ function cplIcon(k){
 function bodyFor(axis,k,F,L,H,col,fill){ return axis==='v'? eqBody(k,F,L,H,col) : eqPlan(k,F,L,H,col); }
 
 /* ===== VERSION ========================================================== */
-var APP_VER='1.9', APP_BY='AWA', APP_NAME='BISA — Badak LNG Integrated Shaft Alignment';
+var APP_VER='1.9.1', APP_BY='AWA', APP_NAME='BISA — Badak LNG Integrated Shaft Alignment';
 /* Schema version of the saved file. The reader below accepts every version
    ever written, so an old job file always opens in a newer build.        */
 var FILE_SCHEMA=7;
@@ -3316,8 +3621,8 @@ function collectFigures(){
  var des=S.passes[0], ini=S.passes[1]||S.passes[0], fin=S.passes[S.passes.length-1];
  [['xd',des],['xi',ini],['xf',fin]].forEach(function(q){
   var svg='<svg viewBox="0 0 420 200" xmlns="http://www.w3.org/2000/svg"><rect width="420" height="200" fill="#fff"/>'+
-   '<g transform="translate(0,10)">'+crossSVG(q[1].stat,crossCode('stat'),{light:true,title:diaTitle('stat')}).replace(/<svg[^>]*>/,'<g transform="scale(0.95)">').replace('</svg>','</g>')+'</g>'+
-   '<g transform="translate(215,10)">'+crossSVG(q[1].mov,crossCode('mov'),{light:true,title:diaTitle('mov')}).replace(/<svg[^>]*>/,'<g transform="scale(0.95)">').replace('</svg>','</g>')+'</g></svg>';
+   '<g transform="translate(0,10)">'+crossRpt(q[1].stat,crossCode('stat'),diaTitle('stat')).replace(/<svg[^>]*>/,'<g transform="scale(0.95)">').replace('</svg>','</g>')+'</g>'+
+   '<g transform="translate(215,10)">'+crossRpt(q[1].mov,crossCode('mov'),diaTitle('mov')).replace(/<svg[^>]*>/,'<g transform="scale(0.95)">').replace('</svg>','</g>')+'</g></svg>';
   add(q[0],svg,620);
  });
  add('simv',simEq(S.passes.length-1,'v',true),740);
@@ -3448,7 +3753,7 @@ function buildReportXlsx(){
   var first=g.G.length+1;
   S.passes.forEach(function(p,i){
    var rr=g.G.length, n=rr+1;
-   g.set(rr,0,{t:'s',v:String(passName(i)),s:10});
+   g.set(rr,0,{t:'s',v:String(passName(i))+(i>0&&passDate(i)?' '+showDate(passDate(i)):''),s:10});
    [p.stat.T,p.stat.L,p.stat.R,p.stat.B,p.mov.T,p.mov.L,p.mov.R,p.mov.B].forEach(function(v,k){ g.set(rr,k+1,{t:'n',v:D(v),s:6}); });
    var sv=(i===0)?'':('+'+cSAG+'/2'), sm=(i===0||isFR())?'':('+'+cSAG+'/2');
    g.set(rr,9,{t:'f',f:'(E'+n+'-B'+n+')/2'+sv,s:6});
@@ -3563,8 +3868,7 @@ function buildReportXlsx(){
   ['Description','Name','Title','Signature','Date'].forEach(function(t,i){
    var c=[0,2,5,8,10][i], c2=[1,4,7,9,NCOL-1][i];
    g.set(sg,c,{t:'s',v:t,s:4}); g.band(sg,c,sg?c2:c2,4); g.merge(sg,c,sg,c2); });
-  [['PERFORMED BY',S.sign.prepName,S.sign.prepTitle],['REVIEWED BY',S.sign.chkName,S.sign.chkTitle],
-   ['APPROVED BY',S.sign.appName,S.sign.appTitle]].forEach(function(q){
+  signRows().forEach(function(q){
    var rr=g.G.length; g.RH[rr]=42;
    g.set(rr,0,{t:'s',v:q[0],s:10}); g.band(rr,0,1,10); g.merge(rr,0,rr,1);
    g.set(rr,2,{t:'s',v:q[1]||'',s:9}); g.band(rr,2,4,9); g.merge(rr,2,rr,4);
@@ -4177,21 +4481,26 @@ var TESTS=[
   S.dim={D1:I(29),D2:I(78),D3:I(184),H:I(7),gap:I(29)};
   S.crit=defaultCrit(); S.crit[0].act=I(0.25); S.crit[3].act=I(0.0015); S.crit[3].rem='ok';
   S.crit.push({d:'THRUST',dmin:I(0.01),dmax:I(0.015),act:I(0.0135),rem:'x'});
-  S.passes=[{name:'desired',time:'t',stat:{T:0,L:I(0.001),R:I(-0.003),B:I(-0.002)},mov:{T:0,L:I(0.002),R:I(-0.002),B:0}},
-            {name:'initial',time:'t',stat:{T:0,L:M(5),R:M(17),B:M(22)},mov:{T:0,L:M(-19),R:M(-29),B:M(-46)}}];
+  S.passes=[{name:'desired',time:'t',date:'2024-09-07',stat:{T:0,L:I(0.001),R:I(-0.003),B:I(-0.002)},mov:{T:0,L:I(0.002),R:I(-0.002),B:0}},
+            {name:'initial',time:'t',date:'2024-09-07',stat:{T:0,L:M(5),R:M(17),B:M(22)},mov:{T:0,L:M(-19),R:M(-29),B:M(-46)}},
+            {name:'pass',time:'t',date:'2026-10-20',stat:{T:0,L:M(1),R:M(1),B:M(2)},mov:{T:0,L:M(-1),R:M(-1),B:M(-2)}}];
   S.sag=M(4); S.sf={r:[0.01,0.02,0,0.03],limit:0.0508,note:'A',checked:true};
+  S.sign.extra=[{role:'WITNESSED BY',name:'OPS',title:'Shift Supv'}]; S.rpt={off:{spec:true,graph:true}};
+  var tmp=S.crit[0]; S.crit[0]=S.crit[7]; S.crit[7]=tmp;
   S.tol={basis:'cust',rpm:3000,grade:'AL1.2',offAcc:I(0.002),angAcc:0.0004}; S.ev={analysis:'an',recommendation:'rec'};
-  S.photos=[{d:'data:image/jpeg;base64,/9j/'+('Z'.repeat(400)),cap:'hub',t:'t'}];
+  S.photos=[{d:'data:image/jpeg;base64,/9j/'+('Z'.repeat(400)),cap:'hub',t:'t',noRpt:true}];
   var ref=solveIdx(1), want=JSON.stringify(S);
   var text=JSON.stringify(packJob());
   S.sag=0; S.crit=defaultCrit(); S.photos=[]; S.passes=[newPass('desired'),newPass('initial')];
   var ok=applyJob(JSON.parse(text)), r=solveIdx(1);
   var got=JSON.parse(JSON.stringify(S)); delete got.jobId; var w=JSON.parse(want); delete w.jobId;
   var diffs=Object.keys(w).filter(function(k){ return JSON.stringify(w[k])!==JSON.stringify(got[k]); });
-  var n=ck([['bar sag back, mils',S.sag/SA.MIL_MM,4],['coupling gap actual back, inch',S.crit[0].act/IN,0.25],
-   ['added row actual back, inch',S.crit[7].act/IN,0.0135],['I/B horizontal unchanged',r.move.ibH,ref.move.ibH],
+  var n=ck([['bar sag back, mils',S.sag/SA.MIL_MM,4],['coupling gap actual back, inch',S.crit[7].act/IN,0.25],
+   ['moved row stays first, inch',S.crit[0].act/IN,0.0135],['I/B horizontal unchanged',r.move.ibH,ref.move.ibH],
    ['O/B vertical unchanged',r.move.obV,ref.move.obV]]);
-  var t=ckS([['opened',ok,true],['fields that differ',diffs.join(',')||'none','none'],['photo back',S.photos.length,1]]);
+  var t=ckS([['opened',ok,true],['fields that differ',diffs.join(',')||'none','none'],['photo back',S.photos.length,1],
+   ['photo left out of report stays out',!!S.photos[0].noRpt,true],['as found date',passDate(1),'2024-09-07'],['final date',passDate(2),'2026-10-20'],
+   ['extra signer',S.sign.extra[0].role,'WITNESSED BY'],['report choice',!!S.rpt.off.spec,true]]);
   return {pass:n.pass&&t.pass, detail:n.detail+'\n'+t.detail};
  });}},
 {n:'NUM-1  Comma or dot, a typed value is read the same',
@@ -4250,12 +4559,46 @@ var TESTS=[
   var n=0, seq=heads.every(function(x){ if(/^\d+b\. /.test(x)) return x.indexOf(n+'b. ')===0; n++; return x.indexOf(n+'. ')===0; });
   var photosIn=(html.match(/data:image\/jpeg;base64,\/9j\/(AA|BB)/g)||[]).join(',');
   S.rpt={off:{}}; S.photos=[]; buildReport();
-  return ckS([['full report pages',full,8],['pages after leaving 5 sections out',cut,5],
+  return ckS([['full report has more pages',full>cut,true],['pages after leaving 5 sections out',cut>=3,true],
    ['specification gone',txt.indexOf('Specification')<0,true],['soft foot gone',txt.indexOf('Soft foot record')<0,true],
    ['signature gone',txt.indexOf('PERFORMED BY')<0,true],['correction kept',txt.indexOf('Correction required')>=0,true],
    ['numbering has no gaps',seq,true],['first heading',heads[0],'1. Job description'],
    ['page count printed',txt.indexOf('Page 5 of 5')>=0,true],['only the ticked photo',photosIn,'data:image/jpeg;base64,/9j/AA'],
    ['full report had soft foot',fullTxt.indexOf('Soft foot record')>=0,true]]);
+ });}},
+{n:'V191-1  As found line, reading dates, row order, print cross',
+ d:'From the first correction on, the simulations draw the AS FOUND centreline next to the current one.\n'+
+   'Each pass carries the date it was read; files from older builds take the day the pass was created.\n'+
+   'Critical dimension rows move up and down. The printed reading cross uses the report font only.',
+ f:function(){ return withState(function(){
+  var I=function(v){return v*IN;};
+  S.passes=[newPass('desired'),newPass('initial'),newPass('pass')];
+  S.passes[1].stat={T:0,L:I(0.004),R:I(-0.004),B:I(0.01)}; S.passes[1].date='2025-03-01'; S.passes[2].date='2026-10-20';
+  var eq=simEq(2,'h',true), ln=simLine(2,'v',true), one=simEq(1,'v',true);
+  var old=migrate({S:{passes:[{name:'desired',time:'2024-09-07T01:00:00Z',stat:{},mov:{}},{name:'initial',time:'2024-09-07T02:00:00Z',stat:{},mov:{}}]}});
+  S.crit=defaultCrit(); var first=S.crit[0].d, second=S.crit[1].d; critMove(0,1);
+  var cr=crossRpt({T:0,L:I(0.007),R:I(0.019),B:I(0.026)},'G/T','Generator → Turbin');
+  return ckS([['equipment view shows AS FOUND',eq.indexOf('AS FOUND')>0,true],['line view shows AS FOUND',ln.indexOf('AS FOUND')>0,true],
+   ['as found date in the legend',eq.indexOf('01/03/2025')>0,true],['no extra line when the current pass is AS FOUND',one.indexOf('AS FOUND')<0,true],
+   ['old file pass date from creation time',old.S.passes[1].date,'2024-09-07'],
+   ['row moved down',S.crit[1].d,first],['row moved up',S.crit[0].d,second],
+   ['print cross has no monospace',cr.indexOf('monospace')<0,true],['print cross caption on top',cr.indexOf('y="13"')>0,true]]);
+ });}},
+{n:'RPT-2  Report pages are filled, graphs get a landscape page each at true mm scale',
+ d:'Sections are packed by measured height so no page holds less than it could, the two line graphs\n'+
+   'each take a landscape page, both graphs use the same millimetre scale, and the bar sag has its own box.',
+ f:function(){ return withState(function(){
+  var M=function(v){return v*SA.MIL_MM;};
+  S.passes=[newPass('desired'),newPass('initial'),newPass('pass')]; S.passes[1].stat={T:0,L:M(-5),R:M(5),B:M(-12)}; S.sag=M(4); S.finalConfirmed=true;
+  var n=buildReport(), rep=$('rep');
+  var land=rep.querySelectorAll('.sheet.land'), svgs=rep.querySelectorAll('.sheet.land svg');
+  var w0=svgs[0]&&svgs[0].getAttribute('width'), sc0=svgs[0]&&(svgs[0].textContent.match(/1 mm = [\d.]+ mil/)||[''])[0], sc1=svgs[1]&&(svgs[1].textContent.match(/1 mm = [\d.]+ mil/)||[''])[0];
+  var sag=rep.querySelector('.sagbox'), top=rep.querySelector('.ptop b');
+  var simTogether=Array.prototype.some.call(rep.querySelectorAll('.sheet'),function(sh){ var t=sh.innerHTML; return t.indexOf('SIMULASI VERTIKAL')>=0&&t.indexOf('SIMULASI HORIZONTAL')>=0; });
+  S.passes=[]; S.photos=[]; buildReport();
+  return ckS([['two landscape pages',land.length,2],['graph sized in mm',/mm$/.test(w0||''),true],['same vertical scale on both',sc0&&sc0===sc1,true],
+   ['bar sag box',!!sag&&sag.textContent.indexOf('BAR SAG CORRECTION')>=0,true],['file name top right',top&&top.textContent,fileBase()],
+   ['pages counted',n,rep.querySelectorAll('.sheet').length],['both simulations on one page',simTogether,true]]);
  });}},
 {n:'LOAD-1  Old job files still open',
  d:'A file written by any earlier build must load. Fields that did not exist then are filled from the\n'+
